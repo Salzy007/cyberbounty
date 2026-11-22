@@ -583,12 +583,43 @@ html:not(.ready) .top { opacity: 0; transform: translateY(-14px); }
 .how__ctl { flex-wrap: wrap; }
 
 /* неоновое свечение по верхнему и нижнему краю: появляется плавно в момент раскрытия заставки и остаётся навсегда.
-   Это то же мягкое свечение, что оставляют створки при расхождении, поэтому передача без скачка. */
-.edge { position: fixed; left: 0; right: 0; height: 0; z-index: 60; pointer-events: none; opacity: 0; transition: opacity 1.2s ease; }
+   Мягкий градиент + слегка размытая яркая линия у самого края. */
+.edge { position: fixed; left: 0; right: 0; height: 64px; z-index: 60; pointer-events: none; opacity: 0; transition: opacity 1.2s ease; }
 html.edge-on .edge { opacity: 1; }
-.edge::before { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: var(--cyan); animation: edgeBreath 7s ease-in-out infinite alternate; }
-.edge--t { top: 0; }
-.edge--t::before { top: -2px; box-shadow: 0 6px 30px -4px rgba(53, 230, 255, .8); }
-.edge--b { bottom: 0; }
-.edge--b::before { bottom: -2px; box-shadow: 0 -6px 30px -4px rgba(53, 230, 255, .8); }
+.edge--t { top: 0; background: linear-gradient(180deg, rgba(53, 230, 255, .30), rgba(53, 230, 255, .10) 45%, transparent); }
+.edge--b { bottom: 0; background: linear-gradient(0deg, rgba(53, 230, 255, .30), rgba(53, 230, 255, .10) 45%, transparent); }
+.edge::before { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: rgba(120, 240, 255, .9); filter: blur(1.6px); box-shadow: 0 0 16px 2px rgba(53, 230, 255, .55); animation: edgeBreath 7s ease-in-out infinite alternate; }
+.edge--t::before { top: 0; }
+.edge--b::before { bottom: 0; }
 @keyframes edgeBreath { from { opacity: 1; } to { opacity: .8; } }
+
+/* ---------- телефон и планшет: без зума, без лишних эффектов, стабильный макет ---------- */
+html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; }
+body { overscroll-behavior-x: none; }
+@media (hover: none), (max-width: 900px) {
+  /* тяжёлые эффекты выключаем: размытие подложки, анимация пятен света, подсветка сетки и свечение за курсором (курсора нет) */
+  *, *::before, *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .orb { animation: none; will-change: auto; }
+  .bg__orbs { transform: none !important; will-change: auto; }
+  .bg__grid--hot, #fx, .glow { display: none !important; }
+  .how__aura { animation: none; }
+  .top.stuck { background: rgba(6, 7, 13, .94); }
+  .menu { background: rgba(6, 7, 13, .98); }
+  .dock { background: rgba(13, 15, 40, .98); }
+  .modal__back { background: rgba(3, 4, 10, .86); }
+  .btn--ghost { background: rgba(20, 23, 52, .85); }
+  .tag { background: rgba(10, 14, 34, .85); }
+  .eyebrow { background: rgba(8, 24, 40, .85); }
+  .ticker { background: rgba(6, 7, 13, .92); }
+  /* появление блоков при прокрутке: короче и легче, чтобы макет не «плыл» */
+  .reveal { transform: translate3d(0, 10px, 0); transition: opacity .5s ease, transform .5s var(--ease); }
+  .tile img, .photo img { transition: none; }
+  .tile:hover img { transform: none; }
+  .hero__photo img { transform: none; }
+  html:not(.ready) .hero__photo img { transform: none; }
+}
+
+/* ничто не должно выпирать за ширину экрана (из-за этого телефон «уменьшал» страницу и макет плыл) */
+.sec, .foot, .hero, main { overflow-x: clip; }
+.how__phone { overflow: clip; }
+html, body { max-width: 100%; }
