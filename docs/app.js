@@ -472,6 +472,7 @@ function setupFx() {
   /* щипок и двойной тап не должны менять масштаб (iOS игнорирует запрет в meta) */
   document.addEventListener("gesturestart", (e) => e.preventDefault());
   document.addEventListener("gesturechange", (e) => e.preventDefault());
+  document.addEventListener("touchmove", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
   if (matchMedia("(hover: none), (max-width: 900px)").matches) return;      // на телефоне фон статичный: частицы и свечение за курсором тяжёлые и не нужны
   const root = document.documentElement, glow = $("#glow"), cv = $("#fx"), ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -711,7 +712,7 @@ function setupIntro() {
     intro.classList.add("go");
     html.classList.add("edge-on");                                           // свечение по краям подхватывает эстафету у створок
     setTimeout(() => { html.classList.add("ready"); }, 380);                  // герой выезжает, когда створки уже расходятся
-    setTimeout(() => { html.classList.remove("intro-on"); intro.remove(); }, 1500);
+    setTimeout(() => { html.classList.add("intro-end"); }, 1600);          // створки остаются у краёв экрана как свечение
   };
   const hero = $(".hero__photo img");
   const loaded = Promise.all([document.fonts ? document.fonts.ready : 0, hero && hero.decode ? hero.decode().catch(() => 0) : 0]);

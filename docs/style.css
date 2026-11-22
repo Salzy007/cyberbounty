@@ -79,7 +79,7 @@ h1, h2, h3, h4, p { margin: 0; }
 .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: .16em; white-space: nowrap; }
 .logo b { color: var(--amber); font-weight: 800; text-shadow: 0 0 18px rgba(255, 178, 30, .6); }
 .logo svg { width: 28px; height: 28px; overflow: visible; filter: drop-shadow(0 0 6px rgba(255, 178, 30, .6)); }
-.ring { transform-origin: 12px 12px; animation: rot 14s linear infinite; }
+.ring { transform-box: view-box; transform-origin: 12px 12px; animation: rot 14s linear infinite; }
 .nav { display: flex; gap: 6px; margin-right: auto; margin-left: 24px; }
 .nav a { padding: 8px 14px; border-radius: 10px; color: #b9c0e0; font-weight: 600; position: relative; transition: color .2s; }
 .nav a::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 3px; height: 2px; border-radius: 2px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); transform: scaleX(0); transition: transform .3s var(--ease); }
@@ -448,17 +448,24 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 /* ---------- вступительная заставка (один раз за визит) ---------- */
 .intro { display: none; }
 html.intro-on .intro { display: grid; position: fixed; inset: 0; z-index: 200; place-items: center; }
-html.intro-on body { overflow: hidden; }
-.intro__half { position: absolute; left: 0; right: 0; height: 50.2%; background: #05040f; transition: transform .95s var(--ease) .3s; will-change: transform; }
+html.intro-on:not(.intro-end) body { overflow: hidden; }
+html.intro-on .edge { display: none; }
+html.intro-end .intro { pointer-events: none; }
+html.intro-end .intro__core { display: none; }
+.intro__half { position: absolute; left: 0; right: 0; height: 50.2%; background: #05040f; transition: transform .95s var(--ease) .3s, box-shadow 1.4s ease .3s, border-color 1.4s ease .3s; will-change: transform; }
+.intro__half::after { content: ""; position: absolute; left: 0; right: 0; height: 64px; opacity: 0; transition: opacity 1.4s ease .3s; pointer-events: none; }
+.intro__half--t::after { top: 100%; background: linear-gradient(180deg, rgba(53, 230, 255, .26), rgba(53, 230, 255, .08) 45%, transparent); }
+.intro__half--b::after { bottom: 100%; background: linear-gradient(0deg, rgba(53, 230, 255, .26), rgba(53, 230, 255, .08) 45%, transparent); }
+.intro.go .intro__half::after { opacity: 1; }
 .intro__half--t { top: 0; border-bottom: 2px solid var(--cyan); box-shadow: 0 6px 30px -4px rgba(53, 230, 255, .8); background: radial-gradient(60% 120% at 50% 100%, rgba(120, 70, 255, .28), transparent), #05040f; }
 .intro__half--b { bottom: 0; border-top: 2px solid var(--cyan); box-shadow: 0 -6px 30px -4px rgba(53, 230, 255, .8); background: radial-gradient(60% 120% at 50% 0%, rgba(40, 190, 255, .22), transparent), #05040f; }
-.intro__core { position: relative; z-index: 2; display: grid; justify-items: center; gap: 18px; padding: 0 24px; transition: opacity .4s, transform .5s var(--ease); }
+.intro__core { position: relative; z-index: 2; display: grid; justify-items: center; gap: 18px; padding: 0 24px; max-width: 100%; box-sizing: border-box; transition: opacity .4s, transform .5s var(--ease); }
 .intro__logo { width: 92px; height: 92px; overflow: visible; filter: drop-shadow(0 0 14px rgba(255, 178, 30, .75)); animation: iLogo 1s var(--ease) both; }
 .intro__logo .ring { animation-duration: 4s; }
 @keyframes iLogo { from { opacity: 0; transform: scale(.55) rotate(-90deg); } }
-.intro__word { display: flex; gap: .06em; font-weight: 800; font-size: clamp(30px, 8vw, 52px); letter-spacing: .16em; animation: iWord .9s .25s var(--ease) both; }
+.intro__word { display: flex; gap: .06em; font-weight: 800; font-size: clamp(30px, 8vw, 52px); letter-spacing: .16em; animation: iWord .9s .25s var(--ease) both; max-width: 100%; }
 .intro__word b { color: var(--amber); text-shadow: 0 0 26px rgba(255, 178, 30, .7); font-weight: 800; }
-@keyframes iWord { from { opacity: 0; transform: translateY(16px); letter-spacing: .5em; } }
+@keyframes iWord { from { opacity: 0; transform: translateY(16px); } }
 .intro__log { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; font: 600 14px var(--mono); color: #9aa4d6; min-width: 240px; }
 .intro__log li { display: flex; justify-content: space-between; gap: 24px; opacity: 0; animation: iLine .45s var(--ease) forwards; }
 .intro__log li:nth-child(1) { animation-delay: .6s; } .intro__log li:nth-child(2) { animation-delay: 1.05s; } .intro__log li:nth-child(3) { animation-delay: 1.5s; color: #fff; }
@@ -470,8 +477,8 @@ html.intro-on body { overflow: hidden; }
 .intro__skip { margin-top: 6px; color: #6d759f; font: 600 13px var(--mono); letter-spacing: .08em; opacity: 0; animation: iLine .4s .8s forwards; }
 .intro__skip:hover { color: #fff; }
 .intro.go .intro__core { opacity: 0; transform: scale(1.08); }
-.intro.go .intro__half--t { transform: translateY(-101%); }
-.intro.go .intro__half--b { transform: translateY(101%); }
+.intro.go .intro__half--t { transform: translateY(calc(-100% + 2px)); border-bottom-color: rgba(120, 240, 255, .8); box-shadow: 0 4px 22px -2px rgba(53, 230, 255, .4); }
+.intro.go .intro__half--b { transform: translateY(calc(100% - 2px)); border-top-color: rgba(120, 240, 255, .8); box-shadow: 0 -4px 22px -2px rgba(53, 230, 255, .4); }
 /* вход героя после заставки */
 .hero__in > * { transition: opacity .9s var(--ease), transform .9s var(--ease); }
 .hero__in > *:nth-child(1) { transition-delay: .05s; } .hero__in > *:nth-child(2) { transition-delay: .17s; } .hero__in > *:nth-child(3) { transition-delay: .29s; } .hero__in > *:nth-child(4) { transition-delay: .41s; } .hero__in > *:nth-child(5) { transition-delay: .53s; }
@@ -594,7 +601,8 @@ html.edge-on .edge { opacity: 1; }
 @keyframes edgeBreath { from { opacity: 1; } to { opacity: .8; } }
 
 /* ---------- телефон и планшет: без зума, без лишних эффектов, стабильный макет ---------- */
-html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; }
+html, body { touch-action: pan-y; }
+html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
 body { overscroll-behavior-x: none; }
 @media (hover: none), (max-width: 900px) {
   /* тяжёлые эффекты выключаем: размытие подложки, анимация пятен света, подсветка сетки и свечение за курсором (курсора нет) */
