@@ -581,3 +581,11 @@ html:not(.ready) .top { opacity: 0; transform: translateY(-14px); }
 .how__snd[aria-pressed="false"]::after { content: ""; position: absolute; inset: -4px; border-radius: 19px; border: 2px solid var(--cyan); opacity: 0; pointer-events: none; animation: sndHint 2.4s ease-out 1.5s 3 backwards; }
 @keyframes sndHint { 0% { opacity: .8; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.12); } }
 .how__ctl { flex-wrap: wrap; }
+
+/* неоновое свечение по верхнему и нижнему краю экрана — остаётся после заставки на всём сайте */
+.edge { position: fixed; left: 0; right: 0; height: 2px; z-index: 210; pointer-events: none; opacity: 0; animation: edgeIn 1.2s ease .3s forwards, edgeBreath 6s ease-in-out 1.5s infinite alternate;
+  background: linear-gradient(90deg, transparent, var(--cyan) 16%, #fff 50%, var(--cyan) 84%, transparent); }
+.edge--t { top: 0; box-shadow: 0 0 22px 4px rgba(53, 230, 255, .5), 0 8px 54px 12px rgba(53, 230, 255, .22); }
+.edge--b { bottom: 0; box-shadow: 0 0 22px 4px rgba(53, 230, 255, .5), 0 -8px 54px 12px rgba(53, 230, 255, .22); }
+@keyframes edgeIn { to { opacity: 1; } }
+@keyframes edgeBreath { from { opacity: 1; } to { opacity: .72; } }
