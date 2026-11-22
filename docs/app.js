@@ -700,11 +700,12 @@ function setupHow() {
 /* ---------- вступительная заставка ---------- */
 function setupIntro() {
   const html = document.documentElement, intro = $("#intro");
-  if (!html.classList.contains("intro-on")) return;
+  if (!html.classList.contains("intro-on")) { html.classList.add("edge-on"); return; }
   let done = false;
   const finish = () => {
     if (done) return; done = true;
     intro.classList.add("go");
+    html.classList.add("edge-on");                                           // свечение по краям подхватывает эстафету у створок
     setTimeout(() => { html.classList.add("ready"); }, 380);                  // герой выезжает, когда створки уже расходятся
     setTimeout(() => { html.classList.remove("intro-on"); intro.remove(); }, 1500);
   };
