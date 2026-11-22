@@ -42,3 +42,6 @@
   .kpis { grid-template-columns: 1fr 1fr 1fr; gap: 8px; } .kpi { padding: 12px; } .kpi b { font-size: 20px; } .kpi span { font-size: 12px; }
   .row { grid-template-columns: minmax(0, 1fr) auto; } .row__t { grid-column: 1 / -1; display: flex; gap: 8px; align-items: baseline; }
 }
+
+html, body, body * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea { -webkit-user-select: text; user-select: text; }
