@@ -631,3 +631,12 @@ body { overscroll-behavior-x: none; }
 .sec, .foot, .hero, main { overflow-x: clip; }
 .how__phone { overflow: clip; }
 html, body { max-width: 100%; }
+
+/* запасной вариант для встроенных браузеров (Telegram и др.), где overflow: clip не работает: ничего не должно выпирать и растягивать страницу */
+.sec, .foot, .hero, main { overflow-x: hidden; overflow-x: clip; }
+.how__phone { overflow: hidden; overflow: clip; }
+.how__phone, .how__stage { contain: paint; }
+@media (hover: none), (max-width: 900px) {
+  .how__aura { width: 100%; }
+  body { position: relative; width: 100%; }
+}
