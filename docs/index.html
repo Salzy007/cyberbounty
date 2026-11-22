@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CyberBounty — компьютерный клуб: бронь места онлайн</title>
+<meta name="description" content="CyberBounty — игровой клуб: ПК RTX 4060–4080, VIP, турнирные столы, PlayStation 5 Lounge, кальяны и бар. Забронируйте место за 20 секунд.">
+<meta name="theme-color" content="#06070d">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb21e' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5' stroke-dasharray='3.2 2.6'/%3E%3Cpath d='M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%2335e6ff' stroke='none'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/exo2-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/exo2-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+<script>
+(function () {
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.documentElement.classList.add(reduce ? "ready" : "intro-on");   /* заставка при каждой загрузке и обновлении */
+  /* после F5 всегда начинаем с самого верха, а не с запомненного места */
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  var top = function () { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); };
+  top(); addEventListener("DOMContentLoaded", top); addEventListener("load", top); addEventListener("pageshow", top);
+})();
+</script>
+<noscript><style>.intro{display:none!important}.hero__in>*{opacity:1!important;transform:none!important}</style></noscript>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/></symbol>
+    <symbol id="i-sofa" viewBox="0 0 24 24"><path d="M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z"/><path d="M6 17v2M18 17v2"/></symbol>
+    <symbol id="i-vip" viewBox="0 0 24 24"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><rect x="2" y="9" width="20" height="5" rx="1.5"/><path d="M5 14v6M19 14v6M7 9V6M12 9V5M17 9V6"/></symbol>
+    <symbol id="i-pad" viewBox="0 0 24 24"><path d="M7 7h10a4 4 0 0 1 4 4.2l-.6 4.3a2.6 2.6 0 0 1-4.6 1.2L14.6 15H9.4l-1.2 2a2.6 2.6 0 0 1-4.6-1.2L3 11.2A4 4 0 0 1 7 7z"/><path d="M8 10v3M6.5 11.5h3M15.5 10.5h.01M17.5 12.5h.01"/></symbol>
+    <symbol id="i-hookah" viewBox="0 0 24 24"><path d="M10 3h4M12 3v3M9 6h6l-1 4h-4zM12 10v2"/><path d="M8 12h8l1 5a5 5 0 0 1-10 0z"/><path d="M17 15c3 0 4 2 4 5"/></symbol>
+    <symbol id="i-drink" viewBox="0 0 24 24"><path d="M5 4h14l-5 7v7h3M10 18h-3M12 11l-7-7"/><path d="M14 18v2h-4"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
+    <symbol id="i-headset" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13" width="4" height="7" rx="1.5"/><rect x="17" y="13" width="4" height="7" rx="1.5"/><path d="M19 20c0 1.5-2 2-5 2"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10.5 10.5 0 0 1 14 0M8.5 16a5.5 5.5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  </defs>
+</svg>
+
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__half intro__half--t"></div><div class="intro__half intro__half--b"></div>
+  <div class="intro__core">
+    <svg class="intro__logo" viewBox="0 0 24 24" fill="none" stroke="#ffb21e" stroke-width="1.6" stroke-linecap="round"><g class="ring"><circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 2.6"/></g><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/><circle cx="12" cy="12" r="2" fill="#35e6ff" stroke="none"/></svg>
+    <div class="intro__word"><span>CYBER</span><b>BOUNTY</b></div>
+    <ul class="intro__log"><li>Подключаем зал<i>OK</i></li><li>Проверяем места<i>OK</i></li><li>Всё готово<i>GO</i></li></ul>
+    <div class="intro__bar"><i></i></div>
+    <button class="intro__skip" id="introSkip" type="button">Пропустить</button>
+  </div>
+</div>
+<div class="bg" aria-hidden="true"><div class="bg__orbs"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span></div><div class="bg__grid"></div><div class="bg__grid bg__grid--hot"></div><canvas id="fx"></canvas></div>
+<div class="glow" id="glow" aria-hidden="true"></div>
+
+<!-- ============ ШАПКА ============ -->
+<header class="top" id="top">
+  <div class="wrap top__in">
+    <a class="logo" href="#hero" aria-label="CyberBounty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffb21e" stroke-width="2.2" stroke-linecap="round">
+        <g class="ring"><circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 2.6"/></g>
+        <path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/><circle cx="12" cy="12" r="2" fill="#35e6ff" stroke="none"/>
+      </svg>
+      <span>CYBER<b>BOUNTY</b></span>
+    </a>
+    <nav class="nav" aria-label="Разделы">
+      <a href="#book">Бронь</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#reviews">Отзывы</a>
+    </nav>
+    <div class="top__tools">
+      <button class="chip-btn" id="btnMy" type="button" hidden><svg class="ic"><use href="#i-ticket"/></svg><span>Мои брони</span><i class="badge" id="myBadge" hidden>0</i></button>
+      <button class="chip-btn" id="btnLogin" type="button"><svg class="ic"><use href="#i-user"/></svg><span>Войти</span></button>
+      <a class="btn btn--sm btn--hot" href="#book">Забронировать</a>
+      <button class="burger" id="burger" type="button" aria-label="Меню" aria-expanded="false"><svg class="ic"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+  <div class="menu" id="menu" hidden>
+    <a href="#book">Бронь места</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#reviews">Отзывы</a>
+    <button type="button" id="menuMy" hidden>Мои брони</button><button type="button" id="menuLogin">Войти</button>
+  </div>
+</header>
+
+<main>
+<!-- ============ ГЕРОЙ ============ -->
+<section class="hero" id="hero">
+  <div class="hero__photo" aria-hidden="true"><img src="img/hero.jpg" alt="" fetchpriority="high"></div>
+  <div class="wrap hero__in">
+    <p class="eyebrow"><span class="live-dot"></span>Открыто каждый день · 10:00–02:00</p>
+    <h1 class="glitch" data-text="Играй на максимум"><span>Играй на максимум</span></h1>
+    <p class="lead">Мощные ПК, VIP, турнирные столы и PlayStation&nbsp;5. Выберите место на карте — и оно ваше.</p>
+    <div class="hero__cta">
+      <a class="btn btn--hot btn--lg" href="#book">Выбрать место<svg class="ic"><use href="#i-arrow"/></svg></a>
+      <a class="btn btn--ghost btn--lg" href="#services">Что у нас есть</a>
+    </div>
+    <div class="hero__live" id="heroLive" aria-live="polite">
+      <span class="live-dot"></span><span id="heroLiveText">Считаем свободные места…</span>
+    </div>
+  </div>
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker__track">
+      <span>CS2</span><span>Dota 2</span><span>Valorant</span><span>Fortnite</span><span>Apex Legends</span><span>League of Legends</span><span>EA FC</span><span>GTA V</span><span>Rocket League</span><span>Overwatch 2</span>
+      <span>CS2</span><span>Dota 2</span><span>Valorant</span><span>Fortnite</span><span>Apex Legends</span><span>League of Legends</span><span>EA FC</span><span>GTA V</span><span>Rocket League</span><span>Overwatch 2</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ КАК ЭТО РАБОТАЕТ (ролик по шагам) ============ -->
+<section class="sec sec--how" id="how">
+  <div class="wrap">
+    <header class="sec__head reveal">
+      <p class="kicker">Как это работает</p>
+      <h2>Бронь за пять касаний</h2>
+    </header>
+    <div class="how reveal" id="howStage">
+      <div class="how__cap">
+        <div class="how__steps" id="howSteps" aria-live="polite"></div>
+        <div class="how__ctl">
+          <button class="how__play" id="howPlay" type="button" aria-pressed="false" aria-label="Пауза"><svg class="ic i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg><svg class="ic i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></button>
+          <button class="how__snd" id="howSnd" type="button" aria-pressed="false" aria-label="Включить звук">
+            <svg class="ic s-off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6"/></svg>
+            <svg class="ic s-on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+            <span id="howSndT">Звук</span>
+          </button>
+          <a class="btn btn--hot" href="#book">Попробовать<svg class="ic"><use href="#i-arrow"/></svg></a>
+        </div>
+      </div>
+
+      <div class="how__phone" role="img" aria-label="Пример брони по шагам">
+        <div class="how__aura" aria-hidden="true"></div>
+        <div class="phone">
+          <div class="phone__notch"></div>
+          <div class="bars" id="howBars">
+            <button class="how-bar" type="button" aria-label="Шаг 1"></button><button class="how-bar" type="button" aria-label="Шаг 2"></button><button class="how-bar" type="button" aria-label="Шаг 3"></button><button class="how-bar" type="button" aria-label="Шаг 4"></button><button class="how-bar" type="button" aria-label="Шаг 5"></button>
+          </div>
+          <div class="mkhead"><span>CYBER<b>BOUNTY</b></span><i></i></div>
+          <div class="screens">
+            <!-- 1. зона -->
+            <div class="mk">
+              <h4 class="a" style="--d:.1s">Выберите зону</h4>
+              <div class="mkz a pick" style="--d:.3s;--p:2.3s"><b>Standard</b><small>12 мест · 6 BYN/ч</small></div>
+              <div class="mkz a" style="--d:.5s"><b>VIP</b><small>6 мест · 12 BYN/ч</small></div>
+              <div class="mkz a" style="--d:.7s"><b>Tournament</b><small>4 стола · 18 BYN/ч</small></div>
+              <div class="mkz a" style="--d:.9s"><b>PS5 Lounge</b><small>4 дивана · 10 BYN/ч</small></div>
+              <i class="tap" style="--x:46%;--y:31%;--t:2.1s"></i>
+            </div>
+            <!-- 2. время -->
+            <div class="mk">
+              <h4 class="a" style="--d:.1s">Когда?</h4>
+              <div class="mkrow a" style="--d:.25s"><span class="mkc pick" style="--p:1.3s">Сегодня</span><span class="mkc">Завтра</span><span class="mkc">Вт</span><span class="mkc">Ср</span></div>
+              <div class="mkgrid a" style="--d:.45s"><span class="mkc">18:00</span><span class="mkc">19:00</span><span class="mkc pick" style="--p:2.3s">20:00</span><span class="mkc">21:00</span><span class="mkc">22:00</span><span class="mkc">23:00</span><span class="mkc">00:00</span><span class="mkc">01:00</span></div>
+              <div class="mkrow a" style="--d:.65s"><span class="mkc">1 ч</span><span class="mkc pick" style="--p:3.2s">2 ч</span><span class="mkc">3 ч</span><span class="mkc">5 ч</span></div>
+              <i class="tap" style="--x:22%;--y:24%;--t:1.2s"></i><i class="tap" style="--x:60%;--y:44%;--t:2.2s"></i><i class="tap" style="--x:38%;--y:75%;--t:3.1s"></i>
+            </div>
+            <!-- 3. место -->
+            <div class="mk">
+              <h4 class="a" style="--d:.1s">Выберите место</h4>
+              <div class="mkseats">
+                <span class="a" style="--d:.2s">1</span><span class="a busy" style="--d:.25s">2</span><span class="a" style="--d:.3s">3</span><span class="a" style="--d:.35s">4</span><span class="a busy" style="--d:.4s">5</span><span class="a" style="--d:.45s">6</span>
+                <span class="a" style="--d:.5s">7</span><span class="a" style="--d:.55s">8</span><span class="a" style="--d:.6s">9</span><span class="a" style="--d:.65s">10</span><span class="a" style="--d:.7s">11</span><span class="a" style="--d:.75s">12</span>
+              </div>
+              <p class="mkfree a" style="--d:.9s">Свободно 10 из 12</p>
+              <ul class="mkleg a" style="--d:1.1s"><li><i></i>Свободно</li><li><i class="b"></i>Занято</li><li><i class="s"></i>Ваш выбор</li></ul>
+              <i class="tap" style="--x:17%;--y:40%;--t:2.2s"></i>
+            </div>
+            <!-- 4. подтверждение -->
+            <div class="mk">
+              <h4 class="a" style="--d:.1s">Ваша бронь</h4>
+              <div class="mksum">
+                <p class="a" style="--d:.25s"><span>Зона</span><b>Standard</b></p>
+                <p class="a" style="--d:.4s"><span>Место</span><b>ПК 7</b></p>
+                <p class="a" style="--d:.55s"><span>Время</span><b>20:00–22:00</b></p>
+                <p class="a tot" style="--d:.7s"><span>Итого</span><b>12 BYN</b></p>
+              </div>
+              <div class="mkbtn a" style="--d:.95s"><span>Подтвердить · 12 BYN</span></div>
+              <i class="tap" style="--x:50%;--y:66%;--t:2.4s"></i>
+            </div>
+            <!-- 5. билет -->
+            <div class="mk">
+              <div class="mkok a" style="--d:.1s"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 14-16"/></svg></div>
+              <h4 class="a center" style="--d:.5s">Место за вами</h4>
+              <div class="mkticket a" style="--d:.7s"><em>CB-0042</em><p><span>Standard · ПК 7</span><b>20:00–22:00</b></p><i></i></div>
+              <p class="mkfree a center" style="--d:1.2s">Приходите и играйте</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ БРОНЬ ============ -->
+<section class="sec sec--book" id="book">
+  <div class="wrap">
+    <header class="sec__head reveal">
+      <p class="kicker">Бронь за 20 секунд</p>
+      <h2>Выберите место</h2>
+    </header>
+
+    <div class="book">
+      <div class="book__main">
+        <div class="card step reveal">
+          <div class="step__t"><b>1</b>Зона</div>
+          <div class="zones" id="zones" role="tablist" aria-label="Зона"></div>
+        </div>
+
+        <div class="card step reveal">
+          <div class="step__t"><b>2</b>Когда</div>
+          <div class="days" id="days" role="listbox" aria-label="Дата"></div>
+          <div class="times-wrap">
+            <div class="times" id="times" role="listbox" aria-label="Время начала"></div>
+            <p class="times__empty" id="timesEmpty" hidden></p>
+          </div>
+          <div class="durs" id="durs" role="radiogroup" aria-label="Длительность"></div>
+        </div>
+
+        <div class="card step reveal">
+          <div class="step__t step__t--row">
+            <span><b>3</b>Место</span>
+            <span class="free-count" id="freeCount" aria-live="polite"></span>
+          </div>
+          <div class="room" id="room" aria-label="Схема зала"></div>
+          <ul class="legend" aria-hidden="true">
+            <li><i class="lg lg--free"></i>Свободно</li><li><i class="lg lg--busy"></i>Занято</li><li><i class="lg lg--sel"></i>Ваш выбор</li>
+          </ul>
+        </div>
+      </div>
+
+      <aside class="book__side reveal" aria-label="Ваша бронь">
+        <div class="sum" id="sum">
+          <div class="sum__glow" aria-hidden="true"></div>
+          <h3>Ваша бронь</h3>
+          <dl class="sum__rows">
+            <div><dt>Зона</dt><dd id="sZone">—</dd></div>
+            <div><dt>Место</dt><dd id="sSeat">не выбрано</dd></div>
+            <div><dt>Дата</dt><dd id="sDate">—</dd></div>
+            <div><dt>Время</dt><dd id="sTime">—</dd></div>
+          </dl>
+          <div class="sum__total"><span>Итого</span><b id="sPrice">—</b></div>
+          <button class="btn btn--hot btn--block" id="btnConfirm" type="button" disabled><span class="btn__t">Выберите место</span><i class="spin" aria-hidden="true"></i></button>
+          <p class="sum__err" id="sErr" role="alert" hidden></p>
+          <p class="sum__hint">Цену считает сервер. Оплата в клубе.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ О НАС ============ -->
+<section class="sec" id="about">
+  <div class="wrap about">
+    <div class="about__text reveal">
+      <p class="kicker">О нас</p>
+      <h2>Клуб, в который хочется возвращаться</h2>
+      <p>CyberBounty — игровое пространство для тех, кто привык к железу без компромиссов. Мы собрали мощные компьютеры, тихие VIP-комнаты, столы для командных турниров и уютный Lounge с PlayStation&nbsp;5.</p>
+      <p>Скоростной интернет, мониторы 240–360&nbsp;Гц, механические клавиатуры и гарнитуры. Бар и кальянная — прямо в зале, не нужно прерывать катку.</p>
+      <ul class="perks">
+        <li><svg class="ic"><use href="#i-wifi"/></svg><b>1 Гбит/с</b><span>пинг до серверов от 3 мс</span></li>
+        <li><svg class="ic"><use href="#i-shield"/></svg><b>Чисто и тихо</b><span>уборка каждый час</span></li>
+        <li><svg class="ic"><use href="#i-bolt"/></svg><b>Без очередей</b><span>бронь места онлайн</span></li>
+      </ul>
+    </div>
+    <div class="about__side reveal">
+      <figure class="photo photo--tall"><img src="img/about.jpg" alt="Игровой зал клуба" loading="lazy"></figure>
+      <div class="stats">
+        <div><b data-count="38">38</b><span>игровых ПК</span></div>
+        <div><b data-count="16">16</b><span>часов в сутки</span></div>
+        <div><b data-count="4">4</b><span>PlayStation 5</span></div>
+        <div><b data-count="360">360</b><span>Гц у VIP</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ УСЛУГИ ============ -->
+<section class="sec" id="services">
+  <div class="wrap">
+    <header class="sec__head reveal">
+      <p class="kicker">Наши услуги</p>
+      <h2>Всё для игры</h2>
+    </header>
+
+    <div class="bento">
+      <article class="tile tile--wide reveal" data-zone="standard">
+        <img src="img/standard.jpg" alt="Игровой ПК с подсветкой" class="p-standard" loading="lazy">
+        <div class="tile__body">
+          <span class="tag"><svg class="ic"><use href="#i-monitor"/></svg>12 компьютеров</span>
+          <h3>Standard</h3>
+          <p>Универсальный зал для любых игр. Монитор 240&nbsp;Гц, мышь и клавиатура игрового класса.</p>
+          <div class="tile__foot"><b class="price" data-price="standard">—</b><a class="link" href="#book" data-pick="standard">Забронировать<svg class="ic"><use href="#i-arrow"/></svg></a></div>
+        </div>
+      </article>
+      <article class="tile reveal" data-zone="vip">
+        <img src="img/vip.jpg" alt="VIP-кресло и монитор" loading="lazy">
+        <div class="tile__body">
+          <span class="tag tag--gold"><svg class="ic"><use href="#i-vip"/></svg>6 VIP</span>
+          <h3>VIP</h3>
+          <p>Топовое железо, монитор 360&nbsp;Гц, кресло с массажем и больше личного пространства.</p>
+          <div class="tile__foot"><b class="price" data-price="vip">—</b><a class="link" href="#book" data-pick="vip">Забронировать<svg class="ic"><use href="#i-arrow"/></svg></a></div>
+        </div>
+      </article>
+      <article class="tile reveal" data-zone="lounge">
+        <img src="img/lounge.jpg" alt="PlayStation 5 с геймпадом" class="p-lounge" loading="lazy">
+        <div class="tile__body">
+          <span class="tag"><svg class="ic"><use href="#i-pad"/></svg>4 дивана</span>
+          <h3>PS5 Lounge</h3>
+          <p>Диваны, 4K-телевизор 65″ и геймпады DualSense. Для компании и FIFA-вечеров.</p>
+          <div class="tile__foot"><b class="price" data-price="lounge">—</b><a class="link" href="#book" data-pick="lounge">Забронировать<svg class="ic"><use href="#i-arrow"/></svg></a></div>
+        </div>
+      </article>
+      <article class="tile reveal" data-zone="tournament">
+        <img src="img/tournament.jpg" alt="Турнирный зал с рядами ПК" loading="lazy">
+        <div class="tile__body">
+          <span class="tag"><svg class="ic"><use href="#i-table"/></svg>4 стола по 5 ПК</span>
+          <h3>Tournament</h3>
+          <p>Командные столы: пять одинаковых ПК, гарнитуры, экран тренера. Для скримов и турниров.</p>
+          <div class="tile__foot"><b class="price" data-price="tournament">—</b><a class="link" href="#book" data-pick="tournament">Забронировать<svg class="ic"><use href="#i-arrow"/></svg></a></div>
+        </div>
+      </article>
+      <article class="tile reveal">
+        <img src="img/hookah.jpg" alt="Кальян с неоновой подсветкой" class="p-hookah" loading="lazy">
+        <div class="tile__body">
+          <span class="tag tag--violet"><svg class="ic"><use href="#i-hookah"/></svg>Кальянная</span>
+          <h3>Кальяны</h3>
+          <p>12 вкусов на выбор. Чаша на классике и фруктовая. Подаём прямо к месту, 18+.</p>
+          <div class="tile__foot"><b class="price">от 25 BYN</b></div>
+        </div>
+      </article>
+      <article class="tile tile--full reveal">
+        <img src="img/bar.jpg" alt="Неоновая вывеска бара" class="p-bar" loading="lazy">
+        <div class="tile__body">
+          <span class="tag tag--violet"><svg class="ic"><use href="#i-drink"/></svg>Бар</span>
+          <h3>Напитки и снеки</h3>
+          <p>Коктейли без алкоголя, лимонады, энергетики, кофе, бургеры и пицца. Заказ с места — без отрыва от игры.</p>
+          <div class="tile__foot"><b class="price">от 3 BYN</b></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="specs reveal" id="specs">
+      <h3>Характеристики компьютеров</h3>
+      <div class="specs__scroll">
+        <table>
+          <thead><tr><th></th><th>Standard</th><th class="hot">VIP</th><th>Tournament</th></tr></thead>
+          <tbody>
+            <tr><th>Видеокарта</th><td>RTX 4060 8&nbsp;ГБ</td><td>RTX 4080 16&nbsp;ГБ</td><td>RTX 4070 12&nbsp;ГБ</td></tr>
+            <tr><th>Процессор</th><td>Core i5-13400F</td><td>Core i7-14700K</td><td>Core i5-14600K</td></tr>
+            <tr><th>Память</th><td>16&nbsp;ГБ DDR5</td><td>32&nbsp;ГБ DDR5</td><td>32&nbsp;ГБ DDR5</td></tr>
+            <tr><th>Накопитель</th><td>NVMe 1&nbsp;ТБ</td><td>NVMe 2&nbsp;ТБ</td><td>NVMe 1&nbsp;ТБ</td></tr>
+            <tr><th>Монитор</th><td>24″ · 240&nbsp;Гц</td><td>27″ · 360&nbsp;Гц</td><td>24,5″ · 240&nbsp;Гц</td></tr>
+            <tr><th>Периферия</th><td>механика, мышь 26K&nbsp;dpi</td><td>механика, мышь 30K&nbsp;dpi, кресло</td><td>механика, гарнитура</td></tr>
+            <tr><th>Мест</th><td>12</td><td>6</td><td>4 стола × 5</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted-s">Демо-клуб: характеристики и цены вымышленные.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ОТЗЫВЫ ============ -->
+<section class="sec sec--rev" id="reviews">
+  <div class="wrap">
+    <header class="sec__head reveal">
+      <p class="kicker">Отзывы</p>
+      <h2>Что говорят игроки</h2>
+      <p class="rating"><b>4,9</b><span class="stars" aria-label="5 звёзд"><svg class="ic"><use href="#i-star"/></svg><svg class="ic"><use href="#i-star"/></svg><svg class="ic"><use href="#i-star"/></svg><svg class="ic"><use href="#i-star"/></svg><svg class="ic"><use href="#i-star"/></svg></span><span class="muted-s">по 312 отзывам (демо)</span></p>
+    </header>
+  </div>
+  <div class="marquee reveal" id="revRows"></div>
+</section>
+
+<!-- ============ ПРИЗЫВ ============ -->
+<section class="sec sec--cta">
+  <div class="wrap cta reveal">
+    <h2>Свободные места не ждут</h2>
+    <p>Выберите зону, время и место — подтверждение за пару касаний.</p>
+    <a class="btn btn--hot btn--lg" href="#book">Забронировать сейчас<svg class="ic"><use href="#i-arrow"/></svg></a>
+  </div>
+</section>
+</main>
+
+<!-- ============ ПОДВАЛ ============ -->
+<footer class="foot">
+  <div class="wrap foot__in">
+    <div class="foot__col">
+      <a class="logo" href="#hero" aria-label="CyberBounty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ffb21e" stroke-width="2.2" stroke-linecap="round"><g class="ring"><circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 2.6"/></g><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/><circle cx="12" cy="12" r="2" fill="#35e6ff" stroke="none"/></svg>
+        <span>CYBER<b>BOUNTY</b></span>
+      </a>
+      <p class="muted-s">Игровой клуб. Демо-проект: клуб, адрес, цены и отзывы вымышленные.</p><p class="muted-s" id="demoNote" hidden>Демо-версия: ваши брони хранятся только в этом браузере.</p>
+    </div>
+    <div class="foot__col"><h4>Разделы</h4><a href="#book">Бронь места</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#reviews">Отзывы</a></div>
+    <div class="foot__col"><h4>Часы работы</h4><p>Каждый день<br>10:00 – 02:00</p><p class="muted-s">Последняя бронь заканчивается в 02:00</p></div>
+    <div class="foot__col"><h4>Контакты</h4><p><svg class="ic ic--s"><use href="#i-pin"/></svg> Минск, демо-адрес</p><p class="muted-s">Связь — через бронь на сайте</p></div>
+  </div>
+  <div class="wrap foot__legal">
+    <span>© 2026 CyberBounty</span>
+    <span class="foot__links"><a href="credits.html">Источники фото</a><a href="privacy.html">Политика конфиденциальности</a></span>
+  </div>
+</footer>
+
+<!-- мобильная панель подтверждения -->
+<div class="dock" id="dock" aria-hidden="true">
+  <div class="dock__info"><b id="dSeat">—</b><span id="dWhen">—</span></div>
+  <button class="btn btn--hot" id="dockConfirm" type="button"><span class="btn__t">Подтвердить</span><i class="spin" aria-hidden="true"></i></button>
+</div>
+
+<!-- ============ ОКНА ============ -->
+<div class="modal" id="mLogin" hidden>
+  <div class="modal__back" data-close></div>
+  <form class="modal__card" id="loginForm" novalidate role="dialog" aria-modal="true" aria-labelledby="loginT">
+    <button class="modal__x" type="button" data-close aria-label="Закрыть"><svg class="ic"><use href="#i-x"/></svg></button>
+    <h3 id="loginT">Как вас записать?</h3>
+    <p class="muted-s" id="loginSub">Имя и телефон — чтобы найти вашу бронь. Пароль не нужен.</p>
+    <label class="field"><span>Имя</span><input name="name" type="text" autocomplete="name" maxlength="40" placeholder="Например, Андрей" required></label>
+    <label class="field"><span>Телефон</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+375 29 123-45-67" required></label>
+    <p class="field__err" id="loginErr" role="alert" hidden></p>
+    <button class="btn btn--hot btn--block" type="submit"><span class="btn__t">Продолжить</span><i class="spin" aria-hidden="true"></i></button>
+    <p class="muted-s center">Нажимая «Продолжить», вы соглашаетесь с <a href="privacy.html">политикой конфиденциальности</a>.</p>
+  </form>
+</div>
+
+<div class="modal" id="mTicket" hidden>
+  <div class="modal__back" data-close></div>
+  <div class="modal__card modal__card--ticket" role="dialog" aria-modal="true" aria-labelledby="tkT">
+    <div class="ok" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 14-16"/></svg></div>
+    <h3 id="tkT">Место за вами</h3>
+    <div class="ticket" id="ticket"></div>
+    <div class="modal__btns"><button class="btn btn--ghost" type="button" data-close>Ещё бронь</button><button class="btn btn--hot" type="button" id="tkMy">Мои брони</button></div>
+  </div>
+</div>
+
+<div class="drawer" id="dMy" hidden>
+  <div class="modal__back" data-close></div>
+  <section class="drawer__card" role="dialog" aria-modal="true" aria-labelledby="myT">
+    <header class="drawer__head"><h3 id="myT">Мои брони</h3><button class="modal__x modal__x--in" type="button" data-close aria-label="Закрыть"><svg class="ic"><use href="#i-x"/></svg></button></header>
+    <div class="drawer__body" id="myList"></div>
+    <footer class="drawer__foot"><span id="myWho" class="muted-s"></span><button class="link-btn" id="btnLogout" type="button">Выйти</button></footer>
+  </section>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="demo.js"></script>
+<script src="app.js" defer></script>
+</body>
+</html>
