@@ -26,15 +26,15 @@ h1, h2, h3, h4, p { margin: 0; }
 .center { text-align: center; }
 
 /* фон: живой — градиент, медленные цветные пятна, сетка, подсвечивающаяся у курсора, частицы */
-.bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(165deg, #0b0f33 0%, #0c0728 36%, #08122c 66%, #05040f 100%); }
+.bg { position: fixed; inset: 0 0 auto 0; height: var(--bg-h, 100lvh); z-index: -1; pointer-events: none; overflow: hidden; background: linear-gradient(165deg, #0b0f33 0%, #0c0728 36%, #08122c 66%, #05040f 100%); }
 .bg__orbs { position: absolute; inset: 0; }
-.orb { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; will-change: transform; }
-.o1 { left: -24vmax; top: -8vmax; background: radial-gradient(closest-side, rgba(120, 70, 255, .5), transparent); animation: drift1 28s ease-in-out infinite alternate; }
-.o2 { right: -28vmax; top: 22vmax; background: radial-gradient(closest-side, rgba(40, 190, 255, .34), transparent); animation: drift2 34s ease-in-out infinite alternate; }
-.o3 { left: 18vmax; top: 70vmax; background: radial-gradient(closest-side, rgba(255, 61, 240, .28), transparent); animation: drift3 38s ease-in-out infinite alternate; }
-@keyframes drift1 { to { transform: translate3d(16vmax, 20vmax, 0) scale(1.1); } }
-@keyframes drift2 { to { transform: translate3d(-18vmax, 24vmax, 0) scale(.92); } }
-@keyframes drift3 { to { transform: translate3d(20vmax, -26vmax, 0) scale(1.15); } }
+.orb { position: absolute; width: calc(70 * var(--u, 1vmax)); height: calc(70 * var(--u, 1vmax)); border-radius: 50%; will-change: transform; }
+.o1 { left: calc(-24 * var(--u, 1vmax)); top: calc(-8 * var(--u, 1vmax)); background: radial-gradient(closest-side, rgba(120, 70, 255, .5), transparent); animation: drift1 28s ease-in-out infinite alternate; }
+.o2 { right: calc(-28 * var(--u, 1vmax)); top: calc(22 * var(--u, 1vmax)); background: radial-gradient(closest-side, rgba(40, 190, 255, .34), transparent); animation: drift2 34s ease-in-out infinite alternate; }
+.o3 { left: calc(18 * var(--u, 1vmax)); top: calc(70 * var(--u, 1vmax)); background: radial-gradient(closest-side, rgba(255, 61, 240, .28), transparent); animation: drift3 38s ease-in-out infinite alternate; }
+@keyframes drift1 { to { transform: translate3d(calc(16 * var(--u, 1vmax)), calc(20 * var(--u, 1vmax)), 0) scale(1.1); } }
+@keyframes drift2 { to { transform: translate3d(calc(-18 * var(--u, 1vmax)), calc(24 * var(--u, 1vmax)), 0) scale(.92); } }
+@keyframes drift3 { to { transform: translate3d(calc(20 * var(--u, 1vmax)), calc(-26 * var(--u, 1vmax)), 0) scale(1.15); } }
 .bg__grid { position: absolute; inset: 0; background: linear-gradient(rgba(80, 200, 255, .06) 1px, transparent 1px) 0 0 / 44px 44px, linear-gradient(90deg, rgba(80, 200, 255, .06) 1px, transparent 1px) 0 0 / 44px 44px; }
 .bg__grid--hot { background: linear-gradient(rgba(90, 230, 255, .3) 1px, transparent 1px) 0 0 / 44px 44px, linear-gradient(90deg, rgba(90, 230, 255, .3) 1px, transparent 1px) 0 0 / 44px 44px; -webkit-mask-image: radial-gradient(circle 230px at var(--cx, -999px) var(--cy, -999px), #000, transparent); mask-image: radial-gradient(circle 230px at var(--cx, -999px) var(--cy, -999px), #000, transparent); }
 #fx { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -93,7 +93,7 @@ h1, h2, h3, h4, p { margin: 0; }
 @keyframes menuIn { from { opacity: 0; transform: translateY(-8px); } }
 
 /* ---------- герой ---------- */
-.hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; padding: calc(var(--head) + 40px) 0 0; overflow: hidden; isolation: isolate; }
+.hero { position: relative; min-height: var(--app-h, 100svh); display: flex; flex-direction: column; justify-content: center; padding: calc(var(--head) + 40px) 0 0; overflow: hidden; isolation: isolate; }
 .hero__photo { position: absolute; inset: 0; z-index: -3; }
 .hero__photo img { width: 100%; height: 100%; object-fit: cover; object-position: 55% 40%; }
 .hero__photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6, 7, 13, .82) 4%, rgba(6, 7, 13, .38) 48%, rgba(6, 7, 13, 0)), linear-gradient(0deg, #05040f, transparent 34%), linear-gradient(180deg, rgba(5, 4, 15, .55), transparent 22%); }
