@@ -86,19 +86,41 @@ const ordered = () => S.slots.filter((s) => !s.after_midnight).concat(S.slots.fi
 const ok = (s, h = S.hours) => (s.free[h] || 0) > 0;
 
 function renderTimes() {
+  /* не перерисовываем кнопки целиком: меняем только состояние, иначе рамка мигает, а лента времени дёргается */
   const list = ordered();
   const box = $("#times"), empty = $("#timesEmpty");
   empty.hidden = list.length > 0;
   if (!list.length) empty.textContent = "На эту дату время вышло. Выберите другой день.";
   box.hidden = !list.length;
-  box.innerHTML = list.map((s) => `<button class="time" role="option" type="button" data-start="${s.start}" aria-selected="${s.start === S.start}" ${ok(s) ? "" : "disabled"}>${s.time}${s.after_midnight ? '<svg class="ic"><use href="#i-moon"/></svg>' : ""}</button>`).join("");
-  const sel = $('.time[aria-selected="true"]', box);
-  if (sel) box.scrollLeft = Math.max(0, sel.offsetLeft - box.clientWidth / 2 + sel.offsetWidth / 2);
+  const sig = list.map((s) => s.start + (s.after_midnight ? "n" : "")).join(",");
+  const rebuilt = box.dataset.sig !== sig;
+  if (rebuilt) {
+    box.innerHTML = list.map((s) => `<button class="time" role="option" type="button" data-start="${s.start}">${s.time}${s.after_midnight ? '<svg class="ic"><use href="#i-moon"/></svg>' : ""}</button>`).join("");
+    box.dataset.sig = sig;
+  }
+  const byStart = new Map(list.map((s) => [String(s.start), s]));
+  $$(".time", box).forEach((b) => {
+    const s = byStart.get(b.dataset.start);
+    const sel = s.start === S.start;
+    if (b.disabled !== !ok(s)) b.disabled = !ok(s);
+    if (b.getAttribute("aria-selected") !== String(sel)) b.setAttribute("aria-selected", String(sel));
+  });
+  if (rebuilt) {
+    const sel = $('.time[aria-selected="true"]', box);
+    box.scrollLeft = sel ? Math.max(0, sel.offsetLeft - box.clientWidth / 2 + sel.offsetWidth / 2) : 0;
+  }
 }
 
 function renderDurs() {
-  const slot = S.slots.find((s) => s.start === S.start);
-  $("#durs").innerHTML = S.cfg.durations.map((h) => `<button class="dur" role="radio" type="button" data-h="${h}" aria-checked="${h === S.hours}" ${slot && ok(slot, h) ? "" : "disabled"}>${h}<small> ч</small></button>`).join("");
+  const box = $("#durs"), slot = S.slots.find((s) => s.start === S.start);
+  if (box.children.length !== S.cfg.durations.length) {
+    box.innerHTML = S.cfg.durations.map((h) => `<button class="dur" role="radio" type="button" data-h="${h}">${h}<small> ч</small></button>`).join("");
+  }
+  $$(".dur", box).forEach((b) => {
+    const h = +b.dataset.h, off = !(slot && ok(slot, h)), on = h === S.hours;
+    if (b.disabled !== off) b.disabled = off;
+    if (b.getAttribute("aria-checked") !== String(on)) b.setAttribute("aria-checked", String(on));
+  });
 }
 
 function fixSelection() {
@@ -115,11 +137,11 @@ function fixSelection() {
   }
 }
 
-async function loadSlots(pickFirst = false) {
+async function loadSlots(pickFirst = false, silent = false) {
   const id = ++S.reqId;
-  $("#times").classList.add("loading");
+  if (!silent) $("#times").classList.add("loading");
   let data;
-  try { data = await api(`/zones/${S.zone.id}/slots?date=${S.day}`); } catch (e) { toast(e.message, true); return; }
+  try { data = await api(`/zones/${S.zone.id}/slots?date=${S.day}`); } catch (e) { $("#times").classList.remove("loading"); if (!silent) toast(e.message, true); return; }
   if (id !== S.reqId) return;
   S.slots = data.slots;
   if (pickFirst) S.start = null;
@@ -349,8 +371,8 @@ $("#times").addEventListener("click", (e) => {
   const b = e.target.closest(".time");
   if (!b || b.disabled) return;
   S.start = +b.dataset.start; S.placeId = null; S.key = null;
-  $$(".time").forEach((t) => t.setAttribute("aria-selected", String(t === b)));
-  renderDurs(); ++S.reqId; loadBusy();
+  fixSelection();
+  renderTimes(); renderDurs(); ++S.reqId; loadBusy();
 });
 $("#durs").addEventListener("click", (e) => {
   const b = e.target.closest(".dur");
@@ -387,7 +409,7 @@ let refreshTimer = 0;
 function refresh() {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(async () => {
-    await Promise.all([loadSlots(), loadMy(), heroLive()]);
+    await Promise.all([loadSlots(false, true), loadMy(), heroLive()]);
   }, 120);
 }
 async function live() {
@@ -472,12 +494,11 @@ function setupFx() {
   /* щипок и двойной тап не должны менять масштаб (iOS игнорирует запрет в meta) */
   document.addEventListener("gesturestart", (e) => e.preventDefault());
   document.addEventListener("gesturechange", (e) => e.preventDefault());
-  document.addEventListener("touchmove", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
   if (matchMedia("(hover: none), (max-width: 900px)").matches) return;      // на телефоне фон статичный: частицы и свечение за курсором тяжёлые и не нужны
   const root = document.documentElement, glow = $("#glow"), cv = $("#fx"), ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let W = 0, H = 0, dpr = 1, nodes = [];
-  let mx = -999, my = -999, gx = -999, gy = -999, sy = 0, lastSy = -1, hidden = false;
+  let mx = -999, my = -999, gx = -999, gy = -999, lastX = -1, lastY = -1, hidden = false;
   const resize = () => {
     dpr = Math.min(devicePixelRatio || 1, 1.5); W = innerWidth; H = innerHeight;
     cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -491,16 +512,15 @@ function setupFx() {
   document.addEventListener("pointerleave", () => glow.classList.remove("on"));
   addEventListener("pointerup", (e) => { if (e.pointerType === "touch") setTimeout(() => glow.classList.remove("on"), 900); });
   document.addEventListener("visibilitychange", () => { hidden = document.hidden; if (!hidden) requestAnimationFrame(tick); });
-  addEventListener("scroll", () => { sy = scrollY; }, { passive: true });
 
   function tick() {
     if (hidden) return;
     gx += (mx - gx) * .2; gy += (my - gy) * .2;                       // плавное «догоняние» курсора
-    if (mx > -900) {
+    if (mx > -900 && (Math.abs(gx - lastX) > .4 || Math.abs(gy - lastY) > .4)) {      // пишем в стили только когда курсор реально сдвинулся
+      lastX = gx; lastY = gy;
       glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
       root.style.setProperty("--cx", gx.toFixed(0) + "px"); root.style.setProperty("--cy", gy.toFixed(0) + "px");
     }
-    if (sy !== lastSy) { root.style.setProperty("--sy", sy); lastSy = sy; }
     ctx.clearRect(0, 0, W, H);
     for (const n of nodes) {
       n.x += n.vx; n.y += n.vy;
