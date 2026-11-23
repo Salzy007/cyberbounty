@@ -472,8 +472,15 @@ function setupPage() {
   }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
   $$(".reveal").forEach((el) => io.observe(el));
 
-  const top = $("#top");
-  const onScroll = () => top.classList.toggle("stuck", scrollY > 12);
+  const top = $("#top"), html = document.documentElement, touch = matchMedia("(hover: none), (max-width: 900px)").matches;
+  let scrollTimer = 0;
+  const onScroll = () => {
+    top.classList.toggle("stuck", scrollY > 12);
+    if (!touch) return;
+    /* пока страницу листают, бесконечные анимации на паузе (см. html.scrolling в style.css) */
+    if (!html.classList.contains("scrolling")) html.classList.add("scrolling");
+    clearTimeout(scrollTimer); scrollTimer = setTimeout(() => html.classList.remove("scrolling"), 180);
+  };
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
   const links = $$(".nav a");
@@ -723,12 +730,11 @@ function setupHow() {
 /* ---------- вступительная заставка ---------- */
 function setupIntro() {
   const html = document.documentElement, intro = $("#intro");
-  if (!html.classList.contains("intro-on")) { html.classList.add("edge-on"); return; }
+  if (!html.classList.contains("intro-on")) return;
   let done = false;
   const finish = () => {
     if (done) return; done = true;
     intro.classList.add("go");
-    html.classList.add("edge-on");                                           // свечение по краям подхватывает эстафету у створок
     setTimeout(() => { html.classList.add("ready"); }, 380);                  // герой выезжает, когда створки уже расходятся
     setTimeout(() => { html.classList.add("intro-end"); }, 1600);          // створки остаются у краёв экрана как свечение
   };
