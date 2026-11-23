@@ -20,8 +20,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb21e' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5' stroke-dasharray='3.2 2.6'/%3E%3Cpath d='M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%2335e6ff' stroke='none'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/exo2-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/exo2-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts.css?v=7739a45e">
-<link rel="stylesheet" href="style.css?v=7739a45e">
+<link rel="stylesheet" href="fonts.css?v=6ff83dd6">
+<link rel="stylesheet" href="style.css?v=6ff83dd6">
 <script>
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -48,7 +48,7 @@
 })();
 </script>
 <noscript><style>.intro{display:none!important}.hero__in>*{opacity:1!important;transform:none!important}</style></noscript>
-<script src="nocopy.js?v=7739a45e"></script>
+<script src="nocopy.js?v=6ff83dd6"></script>
 </head>
 <body>
 
@@ -503,9 +503,9 @@
       <p class="muted-s">Код придёт <b>в Telegram</b>, а не по SMS. Откройте бота и нажмите «Поделиться номером»: бот проверит ваш номер и пришлёт код сюда. Код действует 10 минут.</p>
       <a class="btn btn--ghost btn--block" id="phoneBotLink" href="https://t.me/cyberbounty_bot" target="_blank" rel="noopener">Открыть бота<svg class="ic"><use href="#i-telegram"/></svg></a>
       <p class="muted-s" id="codeStatus">Ждём сообщение от бота…</p>
-      <label class="field"><span>Код из бота</span><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required></label>
+      <label class="field" id="codeLabel"><span>Код из бота</span><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required></label>
       <p class="field__err" id="codeErr" role="alert" hidden></p>
-      <button class="btn btn--hot btn--block" type="submit"><span class="btn__t">Войти</span><i class="spin" aria-hidden="true"></i></button>
+      <button class="btn btn--hot btn--block" id="codeSubmit" type="submit"><span class="btn__t">Войти</span><i class="spin" aria-hidden="true"></i></button>
     </form>
   </div>
 </div>
@@ -532,8 +532,8 @@
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="site-config.js?v=7739a45e"></script>
-<script src="demo.js?v=7739a45e"></script>
-<script src="app.js?v=7739a45e" defer></script>
+<script src="site-config.js?v=6ff83dd6"></script>
+<script src="demo.js?v=6ff83dd6"></script>
+<script src="app.js?v=6ff83dd6" defer></script>
 </body>
 </html>

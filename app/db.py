@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS tg_logins (                 -- вход через с
     token_hash   TEXT PRIMARY KEY,                     -- sha256 от секрета, который знает только браузер
     telegram_id  INTEGER,
     name         TEXT,
-    expires_ts   INTEGER NOT NULL
+    expires_ts   INTEGER NOT NULL,
+    expect_tg    INTEGER                               -- если вход по уже привязанному номеру: только этот Telegram
 );
 CREATE TABLE IF NOT EXISTS phone_logins (              -- вход по телефону: код приходит в Telegram-бот
     token_hash   TEXT PRIMARY KEY,                     -- sha256 от секрета из ссылки
@@ -121,6 +122,8 @@ def init_db(db_path: Path) -> None:
         if conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'users'").fetchone():
             _migrate_users(conn)
         conn.executescript(SCHEMA)
+        if "expect_tg" not in [r["name"] for r in conn.execute("PRAGMA table_info(tg_logins)")]:
+            conn.execute("ALTER TABLE tg_logins ADD COLUMN expect_tg INTEGER")
         if conn.execute("SELECT COUNT(*) FROM zones").fetchone()[0] == 0:
             for sort, (zid, name, tagline, price, word, count) in enumerate(SEED_ZONES):
                 conn.execute(

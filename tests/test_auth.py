@@ -204,3 +204,34 @@ def test_one_telegram_cannot_join_two_phones(site):
     other = fresh(site)
     token = _start_and_code(other, "+375292223344", 603)
     assert other.post("/api/auth/phone/verify", json={"token": token, "code": "123456"}).status_code == 409
+
+
+# ---------- вход по уже привязанному номеру: один клик, только свой Telegram ----------
+
+def _confirm_tg(client, token, tg_id):
+    import hashlib
+    from app.db import connect
+    conn = connect(client.app.state.db_path)
+    conn.execute("UPDATE tg_logins SET telegram_id = ?, name = 'Аня' WHERE token_hash = ?",
+                 (tg_id, hashlib.sha256(token.encode()).hexdigest()))
+    conn.close()
+
+
+def test_known_phone_one_tap_accepts_only_linked_telegram(site):
+    c, _ = site
+    first = phone_login(c, "Аня", "+375291112233", tg_id=777)
+    other = fresh(site)                                              # новый браузер, сессии нет
+    st = other.post("/api/auth/phone/start", json={"name": "Аня", "phone": "+375291112233"}).json()
+    assert st["mode"] == "tg" and "start=login_" in st["url"]
+    _confirm_tg(other, st["token"], 888)                             # другой Telegram нажал «Да, войти»
+    assert other.post("/api/auth/telegram/poll", json={"token": st["token"]}).status_code == 403
+    st = other.post("/api/auth/phone/start", json={"name": "Аня", "phone": "+375291112233"}).json()
+    _confirm_tg(other, st["token"], 777)                             # свой, привязанный Telegram
+    me = other.post("/api/auth/telegram/poll", json={"token": st["token"]}).json()["me"]
+    assert me["id"] == first["id"]
+
+
+def test_new_phone_still_uses_contact_code(site):
+    c, _ = site
+    st = c.post("/api/auth/phone/start", json={"name": "Новый", "phone": "+375295550011"}).json()
+    assert st["mode"] == "contact"

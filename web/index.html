@@ -503,9 +503,9 @@
       <p class="muted-s">Код придёт <b>в Telegram</b>, а не по SMS. Откройте бота и нажмите «Поделиться номером»: бот проверит ваш номер и пришлёт код сюда. Код действует 10 минут.</p>
       <a class="btn btn--ghost btn--block" id="phoneBotLink" href="https://t.me/cyberbounty_bot" target="_blank" rel="noopener">Открыть бота<svg class="ic"><use href="#i-telegram"/></svg></a>
       <p class="muted-s" id="codeStatus">Ждём сообщение от бота…</p>
-      <label class="field"><span>Код из бота</span><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required></label>
+      <label class="field" id="codeLabel"><span>Код из бота</span><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required></label>
       <p class="field__err" id="codeErr" role="alert" hidden></p>
-      <button class="btn btn--hot btn--block" type="submit"><span class="btn__t">Войти</span><i class="spin" aria-hidden="true"></i></button>
+      <button class="btn btn--hot btn--block" id="codeSubmit" type="submit"><span class="btn__t">Войти</span><i class="spin" aria-hidden="true"></i></button>
     </form>
   </div>
 </div>
