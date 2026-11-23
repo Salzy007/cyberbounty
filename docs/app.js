@@ -363,11 +363,18 @@ $("#lgMain").addEventListener("click", async (e) => {
     $("#emailSub").textContent = "Пришлём на почту код из 6 цифр. Пароль не нужен."; $("#emailErr").hidden = true; showPanel("email"); return;
   }
   if (p === "telegram") {
-    try { await loadTelegramScript(); } catch (ex) { $("#loginErr").textContent = "Не удалось загрузить Telegram. Проверьте интернет."; $("#loginErr").hidden = false; return; }
-    Telegram.Login.auth({ bot_id: AUTH.providers.telegram.bot_id, request_access: "write" }, (user) => {
-      if (!user) return;                                  // окно закрыли
-      finishAuth(() => api("/auth/telegram", { method: "POST", body: user }));
-    });
+    const err = $("#loginErr"); err.hidden = true;
+    let st; try { st = await api("/auth/telegram/start", { method: "POST" }); } catch (ex) { err.textContent = ex.message; err.hidden = false; return; }
+    const lbl = $("span", btn), old = lbl.textContent; btn.disabled = true; lbl.textContent = "Ждём подтверждения в Telegram…";
+    window.open(st.url, "_blank", "noopener");
+    for (let i = 0; i < 150 && !$("#mLogin").hidden; i++) {       // до 5 минут, раз в 2 секунды
+      await new Promise((r) => setTimeout(r, 2000));
+      try {
+        const r = await api("/auth/telegram/poll", { method: "POST", body: { token: st.token } });
+        if (r.me) { btn.disabled = false; lbl.textContent = old; finishAuth(async () => r); return; }
+      } catch (ex) { err.textContent = ex.message; err.hidden = false; break; }
+    }
+    btn.disabled = false; lbl.textContent = old;
   }
 });
 $("#lgPhoneOpen").addEventListener("click", () => showPanel("phone"));

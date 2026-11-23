@@ -28,6 +28,12 @@ CREATE TABLE IF NOT EXISTS users (                    -- один человек
     google_sub   TEXT UNIQUE,                          -- неизменный id аккаунта Google
     created_ts   INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS tg_logins (                 -- вход через ссылку на бота: сайт ждёт, бот подтверждает
+    token_hash   TEXT PRIMARY KEY,                     -- sha256 от секрета, который знает только браузер
+    telegram_id  INTEGER,
+    name         TEXT,
+    expires_ts   INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS email_codes (               -- одноразовые коды входа по почте (хранится только хэш)
     email       TEXT PRIMARY KEY,
     code_hash   TEXT NOT NULL,

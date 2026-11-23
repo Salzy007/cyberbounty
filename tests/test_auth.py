@@ -217,3 +217,19 @@ def test_double_click_across_site_is_one_booking_and_wait_sees_bot_change(site):
     booking.create_booking(conn, {"id": 4242, "name": "Бот"}, 6, start, 1, "bot-key-0006")
     r = c.get("/api/wait", params={"since": c.get("/api/wait").json()["version"]}).json()
     assert r["changed"] is True
+
+
+# ---------- вход через ссылку на бота (без домена) ----------
+
+def test_telegram_deeplink_login(site):
+    c, settings = site
+    r = c.post("/api/auth/telegram/start").json()
+    assert r["url"].startswith("https://t.me/cb_test_bot?start=login_")
+    assert c.post("/api/auth/telegram/poll", json={"token": r["token"]}).json() == {"status": "pending"}
+    conn = connect(settings.db_path)                           # бот подтверждает: пишет в общую базу
+    h = hashlib.sha256(r["token"].encode()).hexdigest()
+    conn.execute("UPDATE tg_logins SET telegram_id = 4242, name = 'Ира' WHERE token_hash = ?", (h,))
+    me = c.post("/api/auth/telegram/poll", json={"token": r["token"]}).json()["me"]
+    assert me["via"]["telegram"] and me["name"] == "Ира"
+    assert c.post("/api/auth/telegram/poll", json={"token": r["token"]}).status_code == 410      # секрет одноразовый
+    assert c.post("/api/auth/telegram/poll", json={"token": "x" * 30}).status_code == 410

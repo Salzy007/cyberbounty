@@ -231,11 +231,46 @@ def create_app(settings: Settings) -> FastAPI:
     @app.get("/api/auth/providers")
     async def auth_providers():
         """Какие способы входа настроены. Не настроенные кнопка показывает неактивными."""
-        tg, g = bool(settings.telegram_bot_token and settings.telegram_bot_username), bool(settings.google_client_id)
+        tg, g = bool(settings.telegram_bot_username), bool(settings.google_client_id)
         return {"telegram": {"enabled": tg, "bot": settings.telegram_bot_username,
                              "bot_id": int(settings.telegram_bot_token.split(":")[0]) if tg and settings.telegram_bot_token.split(":")[0].isdigit() else None},
                 "google": {"enabled": g, "client_id": settings.google_client_id if g else ""},
                 "email": {"enabled": True, "dev": not providers.smtp_ready(settings)}}
+
+    @app.post("/api/auth/telegram/start")
+    async def tg_start(request: Request):
+        """Вход через бота без домена и BotFather: даём ссылку t.me/бот?start=login_<секрет>, бот подтверждает, сайт ждёт."""
+        login_limit.hit(client_ip(request))
+        if not settings.telegram_bot_username:
+            raise BookingError("off", "Вход через Telegram не настроен.", 503)
+        secret = secrets.token_urlsafe(24)
+        conn = db()
+        try:
+            conn.execute("DELETE FROM tg_logins WHERE expires_ts < ?", (int(time.time()),))
+            conn.execute("INSERT INTO tg_logins (token_hash, expires_ts) VALUES (?, ?)", (_hash(secret), int(time.time()) + 300))
+        finally:
+            conn.close()
+        return {"token": secret, "url": f"https://t.me/{settings.telegram_bot_username}?start=login_{secret}"}
+
+    @app.post("/api/auth/telegram/poll")
+    async def tg_poll(request: Request):
+        data = await read_json(request)
+        token = data.get("token")
+        if not isinstance(token, str) or not 10 <= len(token) <= 64:
+            raise BookingError("bad_token", "Неверный запрос.")
+        conn = db()
+        try:
+            row = conn.execute("SELECT * FROM tg_logins WHERE token_hash = ?", (_hash(token),)).fetchone()
+            if not row or row["expires_ts"] < time.time():
+                raise BookingError("expired", "Время входа вышло. Нажмите кнопку ещё раз.", 410)
+            if row["telegram_id"] is None:
+                return {"status": "pending"}
+            conn.execute("DELETE FROM tg_logins WHERE token_hash = ?", (row["token_hash"],))      # секрет одноразовый
+            cur = current_user(request)
+            user = accounts.sign_in(conn, "telegram_id", row["telegram_id"], row["name"], current_id=cur["id"] if cur else None)
+            return finish_login(conn, user, request)
+        finally:
+            conn.close()
 
     @app.post("/api/auth/telegram")
     async def auth_telegram(request: Request):
