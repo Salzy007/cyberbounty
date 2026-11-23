@@ -99,8 +99,10 @@ h1, h2, h3, h4, p { margin: 0; }
 .hero__photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6, 7, 13, .82) 4%, rgba(6, 7, 13, .38) 48%, rgba(6, 7, 13, 0)), linear-gradient(0deg, #05040f, transparent 34%), linear-gradient(180deg, rgba(5, 4, 15, .55), transparent 22%); }
 .hero__in { position: relative; padding-bottom: 150px; }
 .eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px; border: 1px solid rgba(53, 230, 255, .35); border-radius: 99px; background: rgba(53, 230, 255, .07); color: #bff6ff; font: 600 14px var(--mono); letter-spacing: .02em; margin-bottom: 26px; }
-.live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(56, 242, 160, .7); animation: ping 2s infinite; flex: none; }
-@keyframes ping { 70% { box-shadow: 0 0 0 10px rgba(56, 242, 160, 0); } 100% { box-shadow: 0 0 0 0 rgba(56, 242, 160, 0); } }
+.live-dot { position: relative; width: 9px; height: 9px; border-radius: 50%; background: var(--green); flex: none; }
+/* пульс только через transform и opacity: анимация box-shadow заставляла браузер каждый кадр пересчитывать страницу и заново декодировать фото */
+.live-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: rgba(56, 242, 160, .7); opacity: 0; animation: ping 2s infinite; will-change: transform, opacity; }
+@keyframes ping { 0% { transform: scale(1); opacity: .7; } 70%, 100% { transform: scale(3.2); opacity: 0; } }
 .glitch { position: relative; font-size: clamp(40px, 8.4vw, 104px); line-height: 1.02; font-weight: 800; letter-spacing: -.02em; max-width: 11ch; text-wrap: balance; }
 .glitch span { position: relative; display: block; background: linear-gradient(100deg, #fff 20%, #bff6ff 55%, var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 0 22px rgba(53, 230, 255, .45)); }
 .lead { margin-top: 22px; max-width: 520px; font-size: clamp(17px, 2vw, 21px); color: #c5cbe8; }
