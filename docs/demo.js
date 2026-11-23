@@ -36,6 +36,11 @@
   function load() {
     try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { db = null; }
     if (!db || db.v !== 1) db = fresh();
+    /* раньше демо подсыпало выдуманные брони (user_id 0): убираем их, занятыми должны быть только настоящие брони посетителя */
+    var before = db.bookings.length;
+    db.bookings = db.bookings.filter(function (b) { return b.user_id !== 0; });
+    db.seeded = {};
+    if (db.bookings.length !== before) save();
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { /* память браузера недоступна: работаем в рамках вкладки */ } }
 
@@ -198,32 +203,6 @@
       total: live.reduce(function (s, b) { return s + b.price; }, 0), zones: zones };
   }
 
-  /* ---------- «живая» витрина: сразу видно занятые места ---------- */
-  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
-  var DEMO_NAMES = ["Артём К.", "Даша М.", "Никита Р.", "Макс В.", "Лиза П.", "Илья С.", "Кирилл Т.", "Настя Б.", "Егор Л.", "Вика Н."];
-  function seedDemo(now) {
-    var changed = false;
-    zoneDays(now).slice(0, 4).forEach(function (day) {
-      if (db.seeded[day]) return;
-      db.seeded[day] = 1; changed = true;
-      var r = rng(midnight(day) / 86400);
-      sortedZones().forEach(function (z) {
-        zonePlaces(z.id).forEach(function (p) {
-          if (r() > 0.45) return;
-          var h = [1, 2, 2, 3][Math.floor(r() * 4)], startHour = 13 + Math.floor(r() * 9);
-          var s = midnight(day) + startHour * 3600 + (r() > 0.5 ? 1800 : 0), e = s + h * 3600, w = win(z, day);
-          if (s < now || e > w[1]) return;
-          var clash = db.bookings.some(function (b) { return b.status === "confirmed" && b.place_id === p.id && b.start_ts < e && b.end_ts > s; });
-          if (clash) return;
-          var name = DEMO_NAMES[Math.floor(r() * DEMO_NAMES.length)];
-          db.bookings.push({ id: db.nextBooking++, user_id: 0, client_name: name, client_phone: "37529" + (1000000 + Math.floor(r() * 8999999)), place_id: p.id, start_ts: s, end_ts: e, hours: h,
-            price: z.price * h, status: "confirmed", idem_key: null, created_ts: Math.floor(now) });
-        });
-      });
-    });
-    return changed;
-  }
-
   /* ---------- сессии ---------- */
   function me(now) {
     var s = db.session;
@@ -254,7 +233,6 @@
   /* ---------- маршруты (те же адреса, что у настоящего сервера) ---------- */
   function route(method, path, query, body) {
     var now = Date.now() / 1000, m;
-    if (seedDemo(now)) { db.version++; save(); }
     if (method === "GET" && path === "/config") return { zones: catalog(now), durations: DURATIONS.slice(), version: db.version, now: Math.floor(now), me: me(now) };
     if (method === "GET" && (m = path.match(/^\/zones\/([^/]+)\/slots$/))) return zoneSlots(m[1], query.date, now);
     if (method === "GET" && (m = path.match(/^\/zones\/([^/]+)\/busy$/))) {
