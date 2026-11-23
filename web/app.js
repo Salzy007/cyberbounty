@@ -282,7 +282,7 @@ function renderAuth() {
   const me = S.me;
   $("#btnMy").hidden = !me; $("#menuMy").hidden = !me;
   $("#btnLogin").hidden = !!me; $("#menuLogin").hidden = !!me;
-  $("#btnLink").hidden = !me || !!(me.via && me.via.telegram && me.via.phone);      // всё уже привязано — кнопка не нужна
+  $("#btnLink").hidden = !me || !!(me.via && me.via.telegram);   // вошли через Telegram — привязывать нечего; кнопка только для входа по телефону без Telegram
   $("#myWho").textContent = me ? me.name + (me.via ? " · " + [me.via.telegram && "Telegram", me.via.google && "Google", me.via.email && "почта", me.via.phone && "телефон"].filter(Boolean).join(", ") : "") : "";
   if (!me) { S.my = []; updateBadge(); }
 }
@@ -855,7 +855,7 @@ function setupIntro() {
     if (done) return; done = true;
     intro.classList.add("go");
     setTimeout(() => { html.classList.add("ready"); }, 380);                  // герой выезжает, когда створки уже расходятся
-    setTimeout(() => { html.classList.add("edge-snap", "edge-on", "intro-end"); }, 1600);   // полоски встают на место створок без перехода          // створки остаются у краёв экрана как свечение
+    setTimeout(() => { html.classList.add("intro-end"); }, 1600);   // полоски встают на место створок без перехода          // створки остаются у краёв экрана как свечение
   };
   const hero = $(".hero__photo img");
   const loaded = Promise.all([document.fonts ? document.fonts.ready : 0, hero && hero.decode ? hero.decode().catch(() => 0) : 0]);
