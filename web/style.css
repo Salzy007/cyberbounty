@@ -441,8 +441,8 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 .intro { display: none; }
 html.intro-on .intro { display: grid; position: fixed; inset: 0; z-index: 200; place-items: center; }
 html.intro-on:not(.intro-end) body { overflow: hidden; }
-html.intro-on .edge { display: none; }
-html.intro-end .intro { pointer-events: none; }
+html.intro-on:not(.intro-end) .edge { display: none; }
+html.intro-end .intro { display: none; }
 html.intro-end .intro__core { display: none; }
 .intro__half { position: absolute; left: 0; right: 0; height: 50.2%; background: #05040f; transition: transform .95s var(--ease) .3s, box-shadow 1.4s ease .3s, border-color 1.4s ease .3s; will-change: transform; }
 .intro__half::after { content: ""; position: absolute; left: 0; right: 0; height: 64px; opacity: 0; transition: opacity 1.4s ease .3s; pointer-events: none; }
@@ -615,7 +615,7 @@ body { overscroll-behavior-x: none; }
   .eyebrow { background: rgba(8, 24, 40, .85); }
   .ticker { background: rgba(6, 7, 13, .92); }
   /* появление блоков при прокрутке: короче и легче, чтобы макет не «плыл» */
-  .reveal { transform: translate3d(0, 10px, 0); transition: opacity .5s ease, transform .5s var(--ease); }
+  .reveal, .reveal.in { opacity: 1; transform: none; transition: none; }
   .tile img, .photo img { transition: none; }
   .tile:hover img { transform: none; }
   .hero__photo img { transform: none; }
