@@ -20,8 +20,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb21e' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5' stroke-dasharray='3.2 2.6'/%3E%3Cpath d='M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%2335e6ff' stroke='none'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/exo2-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/exo2-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts.css?v=3ce16f44">
-<link rel="stylesheet" href="style.css?v=3ce16f44">
+<link rel="stylesheet" href="fonts.css?v=5ff230c7">
+<link rel="stylesheet" href="style.css?v=5ff230c7">
 <script>
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -48,7 +48,7 @@
 })();
 </script>
 <noscript><style>.intro{display:none!important}.hero__in>*{opacity:1!important;transform:none!important}</style></noscript>
-<script src="nocopy.js?v=3ce16f44"></script>
+<script src="nocopy.js?v=5ff230c7"></script>
 </head>
 <body>
 
@@ -481,23 +481,11 @@
       <p class="lgn__demo" id="loginDemo" hidden>Демо-страница: вход имитируется одним нажатием. Настоящий вход работает на сервере.</p>
       <div class="auth">
         <div class="auth__row"><button class="auth__btn" type="button" data-p="telegram"><svg class="ic"><use href="#i-telegram"/></svg><span>Войти через Telegram</span></button><p class="auth__hint" hidden></p></div>
-        <div class="auth__row"><div class="auth__g" id="googleSlot" hidden></div><button class="auth__btn" type="button" data-p="google"><svg class="ic"><use href="#i-google"/></svg><span>Войти через Google</span></button><p class="auth__hint" hidden></p></div>
-        <div class="auth__row"><button class="auth__btn" type="button" data-p="email"><svg class="ic"><use href="#i-mail"/></svg><span>Войти по почте</span></button><p class="auth__hint" hidden></p></div>
       </div>
       <button class="link-btn lgn__alt" type="button" id="lgPhoneOpen">Или по имени и телефону</button>
       <p class="field__err" id="loginErr" role="alert" hidden></p>
       <p class="muted-s center">Входя, вы соглашаетесь с <a href="privacy.html">политикой конфиденциальности</a>.</p>
     </section>
-
-    <form class="lgn" id="emailForm" novalidate hidden>
-      <button class="lgn__back" type="button" data-back aria-label="Назад"><svg class="ic"><use href="#i-back"/></svg>Назад</button>
-      <h3>Вход по почте</h3>
-      <p class="muted-s" id="emailSub">Пришлём на почту код из 6 цифр. Пароль не нужен.</p>
-      <label class="field"><span>Почта</span><input name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required></label>
-      <label class="field" id="codeField" hidden><span>Код из письма</span><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"></label>
-      <p class="field__err" id="emailErr" role="alert" hidden></p>
-      <button class="btn btn--hot btn--block" type="submit"><span class="btn__t" id="emailBtnT">Получить код</span><i class="spin" aria-hidden="true"></i></button>
-    </form>
 
     <form class="lgn" id="loginForm" novalidate hidden>
       <button class="lgn__back" type="button" data-back aria-label="Назад"><svg class="ic"><use href="#i-back"/></svg>Назад</button>
@@ -533,8 +521,8 @@
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="site-config.js?v=3ce16f44"></script>
-<script src="demo.js?v=3ce16f44"></script>
-<script src="app.js?v=3ce16f44" defer></script>
+<script src="site-config.js?v=5ff230c7"></script>
+<script src="demo.js?v=5ff230c7"></script>
+<script src="app.js?v=5ff230c7" defer></script>
 </body>
 </html>

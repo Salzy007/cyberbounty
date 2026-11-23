@@ -211,7 +211,7 @@
     return u ? pub(u) : null;
   }
   function pub(u) { return { id: u.id, name: u.name, phone: u.phone || null, email: u.email || null, via: { telegram: !!u.telegram, google: !!u.google, email: !!u.email, phone: !!u.phone } }; }
-  var DEMO_NAMES = { telegram: "Игрок Telegram", google: "Игрок Google", email: "Игрок (почта)" };
+  var DEMO_NAMES = { telegram: "Игрок Telegram" };
   function needUser(now) { var u = me(now); if (!u) { var e = Err("auth", "Войдите, чтобы забронировать.", 401); throw e; } return u; }
   function isAdmin(now) { return !!(db.admin && db.admin.exp > now); }
   function cleanPhone(raw) { var d = String(typeof raw === "string" ? raw : "").replace(/\D/g, ""); if (d.length < 7 || d.length > 15) throw Err("bad_phone", "Введите телефон: от 7 до 15 цифр."); return d; }
@@ -248,14 +248,14 @@
       db.session = { uid: u.id, exp: now + USER_TTL }; save();
       return { me: pub(u) };
     }
-    if (method === "GET" && path === "/auth/providers") return { telegram: { enabled: true }, google: { enabled: true }, email: { enabled: true }, demo: true };
+    if (method === "GET" && path === "/auth/providers") return { telegram: { enabled: true }, demo: true };
     if (method === "POST" && path === "/auth/demo") {                     // имитация: настоящий вход (Telegram/Google/почта) работает только на сервере
       var prov = body.provider;
       if (!DEMO_NAMES[prov]) throw Err("bad_provider", "Неизвестный способ входа.");
       var cur = me(now), du = cur && db.users.filter(function (x) { return x.id === cur.id; })[0];
       du = du || db.users.filter(function (x) { return x[prov]; })[0];
       if (!du) { du = { id: db.nextUser++, name: DEMO_NAMES[prov], phone: null, created_ts: Math.floor(now) }; db.users.push(du); }
-      du[prov] = true; if (prov === "email" && !du.email) du.email = "demo@example.com";
+      du[prov] = true;
       db.session = { uid: du.id, exp: now + USER_TTL }; save();
       return { me: pub(du) };
     }

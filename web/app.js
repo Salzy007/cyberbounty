@@ -286,8 +286,8 @@ function renderAuth() {
   if (!me) { S.my = []; updateBadge(); }
 }
 /* способы входа: что настроено на сервере (в демо — всё включено, но это имитация) */
-const AUTH = { providers: null, link: false, gis: false, tgReady: null };
-const loginPanels = { main: "#lgMain", email: "#emailForm", phone: "#loginForm" };
+const AUTH = { providers: null, link: false, tgReady: null };
+const loginPanels = { main: "#lgMain", phone: "#loginForm" };
 function showPanel(name) {
   Object.entries(loginPanels).forEach(([k, sel]) => { $(sel).hidden = k !== name; });
   const first = $("input", $(loginPanels[name]));
@@ -296,7 +296,6 @@ function showPanel(name) {
 function authHint(p, info) {
   if (CB_DEMO) return "";
   if (p === "telegram" && !info.enabled) return "Вход через Telegram скоро подключим.";
-  if (p === "google" && !info.enabled) return "Вход через Google скоро подключим.";
   return "";
 }
 function renderProviders() {
@@ -308,32 +307,19 @@ function renderProviders() {
     btn.title = on ? "" : hint.textContent;
   });
   $("#loginDemo").hidden = !CB_DEMO;
-  if (!CB_DEMO && P.google.enabled) setupGoogle();
 }
 async function loadProviders() {
-  try { AUTH.providers = await api("/auth/providers"); } catch (e) { AUTH.providers = { telegram: { enabled: false }, google: { enabled: false }, email: { enabled: false } }; }
+  try { AUTH.providers = await api("/auth/providers"); } catch (e) { AUTH.providers = { telegram: { enabled: false } }; }
   renderProviders();
 }
 function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.async = true; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
 }
-async function setupGoogle() {                 // настоящая кнопка Google; пока не загрузилась, стоит обычная
-  if (AUTH.gis) return; AUTH.gis = true;
-  const row = $('[data-p="google"]').closest(".auth__row");
-  try {
-    await loadScript("https://accounts.google.com/gsi/client");
-    google.accounts.id.initialize({ client_id: AUTH.providers.google.client_id, ux_mode: "popup",
-      callback: (r) => finishAuth(() => api("/auth/google", { method: "POST", body: { credential: r.credential } })) });
-    const slot = $("#googleSlot");
-    google.accounts.id.renderButton(slot, { type: "standard", theme: "filled_black", size: "large", text: "signin_with", shape: "pill", width: 320, locale: "ru" });
-    slot.hidden = false; $('[data-p="google"]').hidden = true;
-  } catch (e) { AUTH.gis = false; const h = $(".auth__hint", row); h.textContent = "Google сейчас недоступен. Попробуйте другой способ."; h.hidden = false; }
-}
 function openLogin(link = false) {
   AUTH.link = link === true;
   $("#loginT").textContent = AUTH.link ? "Привязать способ входа" : "Вход в CyberBounty";
   $("#loginSub").textContent = AUTH.link ? "Добавьте ещё один способ — вы останетесь в том же аккаунте со всеми бронями." : "Любой способ ведёт в один аккаунт: брони с сайта и из Telegram будут вместе.";
-  ["#loginErr", "#emailErr", "#phoneErr"].forEach((id) => { $(id).hidden = true; });
+  ["#loginErr", "#phoneErr"].forEach((id) => { $(id).hidden = true; });
   showPanel("main"); closeMenu(); openModal($("#mLogin"));
   if (!AUTH.providers) loadProviders();
   else if (!CB_DEMO && AUTH.providers.telegram.enabled) loadTelegramScript().catch(() => {});
@@ -358,10 +344,6 @@ $("#lgMain").addEventListener("click", async (e) => {
   const btn = e.target.closest(".auth__btn"); if (!btn || btn.disabled) return;
   const p = btn.dataset.p;
   if (CB_DEMO) { finishAuth(() => api("/auth/demo", { method: "POST", body: { provider: p } })); return; }
-  if (p === "email") {
-    $("#emailForm").reset(); $("#emailForm").email.readOnly = false; $("#codeField").hidden = true; $("#emailBtnT").textContent = "Получить код";
-    $("#emailSub").textContent = "Пришлём на почту код из 6 цифр. Пароль не нужен."; $("#emailErr").hidden = true; showPanel("email"); return;
-  }
   if (p === "telegram") {
     const err = $("#loginErr"); err.hidden = true;
     let st; try { st = await api("/auth/telegram/start", { method: "POST" }); } catch (ex) { err.textContent = ex.message; err.hidden = false; return; }
@@ -379,22 +361,6 @@ $("#lgMain").addEventListener("click", async (e) => {
 });
 $("#lgPhoneOpen").addEventListener("click", () => showPanel("phone"));
 $$("#mLogin [data-back]").forEach((b) => b.addEventListener("click", () => showPanel("main")));
-
-$("#emailForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const f = e.target, btn = $(".btn", f), err = $("#emailErr"), step2 = !$("#codeField").hidden;
-  err.hidden = true; setBusy(btn, true);
-  try {
-    if (!step2) {
-      const r = await api("/auth/email/request", { method: "POST", body: { email: f.email.value } });
-      $("#codeField").hidden = false; $("#emailBtnT").textContent = "Войти"; f.email.readOnly = true; f.code.focus();
-      $("#emailSub").textContent = r.dev ? "Почта на сервере ещё не настроена (режим разработки): код записан в окно сервера." : "Код отправлен. Он действует 10 минут. Загляните и в «Спам».";
-    } else {
-      await finishAuth(() => api("/auth/email/verify", { method: "POST", body: { email: f.email.value, code: f.code.value } }), err);
-    }
-  } catch (ex) { err.textContent = ex.message; err.hidden = false; }
-  finally { setBusy(btn, false); }
-});
 
 $("#loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();

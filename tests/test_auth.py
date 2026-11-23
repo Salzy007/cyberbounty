@@ -1,4 +1,4 @@
-"""Вход тремя способами (Telegram, Google, почта) и общая бронь сайта и бота."""
+"""Вход через Telegram и общая бронь сайта и бота."""
 import hashlib
 import hmac
 import logging
@@ -16,7 +16,6 @@ from app.db import connect, init_db
 from app.server import create_app
 
 BOT_TOKEN = "123456:TEST-token-not-real"
-CLIENT_ID = "test-client.apps.googleusercontent.com"
 
 
 def tg_payload(tg_id=777, first="Ира", token=BOT_TOKEN, age=0, **extra):
@@ -29,7 +28,7 @@ def tg_payload(tg_id=777, first="Ира", token=BOT_TOKEN, age=0, **extra):
 @pytest.fixture()
 def site(tmp_path):
     s = Settings(admin_password="x", db_path=tmp_path / "a.db", telegram_bot_token=BOT_TOKEN,
-                 telegram_bot_username="cb_test_bot", google_client_id=CLIENT_ID)
+                 telegram_bot_username="cb_test_bot")
     return TestClient(create_app(s)), s
 
 
@@ -43,6 +42,14 @@ def tomorrow_slot(client, hhmm="12:00", zone="standard"):
 
 
 # ---------- Telegram ----------
+
+def test_providers_only_telegram(tmp_path):
+    c = TestClient(create_app(Settings(admin_password="x", db_path=tmp_path / "p.db")))
+    assert c.get("/api/auth/providers").json() == {"telegram": {"enabled": False}}
+    assert c.post("/api/auth/telegram", json=tg_payload()).status_code == 503
+    assert c.post("/api/auth/google", json={"credential": "x" * 30}).status_code >= 400
+    assert c.post("/api/auth/email/request", json={"email": "a@b.co"}).status_code >= 400
+
 
 def test_telegram_signature_checked(site):
     c, _ = site
@@ -60,95 +67,16 @@ def test_telegram_same_person_same_account(site):
     assert a["id"] == b["id"] and a["via"]["telegram"]
 
 
-# ---------- Google ----------
-
-def google(monkeypatch, sub="g-1", email="ira@example.com", name="Ира Г"):
-    monkeypatch.setattr(auth_providers, "verify_google", lambda cred, cid: {"sub": sub, "email": email, "name": name})
-
-
-def test_google_login_and_links_by_verified_email(site, monkeypatch):
-    c, _ = site
-    google(monkeypatch)
-    g = c.post("/api/auth/google", json={"credential": "x" * 30}).json()["me"]
-    assert g["email"] == "ira@example.com" and g["via"]["google"]
-    # тот же человек зашёл по почте с кодом -> тот же аккаунт
-    assert fresh(site).post("/api/auth/google", json={"credential": "y" * 30}).json()["me"]["id"] == g["id"]
-
-
-def test_google_token_must_be_for_our_client(monkeypatch):
-    class R:
-        status_code = 200
-        def json(self): return {"aud": "other", "iss": "accounts.google.com", "exp": str(int(time.time()) + 99), "sub": "1"}
-    monkeypatch.setattr(auth_providers.httpx, "get", lambda *a, **k: R())
-    with pytest.raises(BookingError):
-        auth_providers.verify_google("t" * 30, CLIENT_ID)
-
-
-# ---------- почта ----------
-
-def code_from_log(caplog):
-    return re.search(r"Код входа для \S+: (\d{6})", caplog.text).group(1)
-
-
-def test_email_code_flow_dev_mode_logs_code(site, caplog):
-    c, _ = site
-    with caplog.at_level(logging.WARNING, logger="cyberbounty"):
-        r = c.post("/api/auth/email/request", json={"email": " Ira@Example.com "})
-    assert r.status_code == 200 and r.json()["dev"] is True and "code" not in r.text
-    code = code_from_log(caplog)
-    assert c.post("/api/auth/email/verify", json={"email": "ira@example.com", "code": "000000" if code != "000000" else "111111"}).status_code == 400
-    me = c.post("/api/auth/email/verify", json={"email": "ira@example.com", "code": code}).json()["me"]
-    assert me["email"] == "ira@example.com" and c.get("/api/config").json()["me"]["id"] == me["id"]
-    assert fresh(site).post("/api/auth/email/verify", json={"email": "ira@example.com", "code": code}).status_code == 400   # одноразовый
-
-
-def test_email_code_limits(site, caplog):
-    c, _ = site
-    with caplog.at_level(logging.WARNING, logger="cyberbounty"):
-        assert c.post("/api/auth/email/request", json={"email": "a@b.co"}).status_code == 200
-        assert c.post("/api/auth/email/request", json={"email": "a@b.co"}).status_code == 429       # не чаще раза в 30 с
-    assert c.post("/api/auth/email/request", json={"email": "не почта"}).status_code == 400
-    code = code_from_log(caplog)
-    wrong = "000000" if code != "000000" else "111111"
-    for _ in range(5):
-        c.post("/api/auth/email/verify", json={"email": "a@b.co", "code": wrong})
-    assert c.post("/api/auth/email/verify", json={"email": "a@b.co", "code": code}).status_code in (400, 429)   # после 5 ошибок код сгорел
-
-
-def test_providers_reflect_config(tmp_path):
-    c = TestClient(create_app(Settings(admin_password="x", db_path=tmp_path / "p.db")))
-    p = c.get("/api/auth/providers").json()
-    assert p["telegram"]["enabled"] is False and p["google"]["enabled"] is False and p["email"]["enabled"] is True
-    assert c.post("/api/auth/telegram", json=tg_payload()).status_code == 503
-    assert c.post("/api/auth/google", json={"credential": "x" * 30}).status_code == 503
-
-
 # ---------- привязка способов к одному человеку ----------
 
-def test_adding_methods_to_logged_in_user_and_conflicts(site, monkeypatch, caplog):
-    c, _ = site
+def test_telegram_links_to_logged_in_phone_account_and_conflicts(site):
+    c, settings = site
     me = c.post("/api/login", json={"name": "Аня", "phone": "+375291112233"}).json()["me"]
-    tg = c.post("/api/auth/telegram", json=tg_payload()).json()["me"]          # вошла -> привязали Telegram к тому же аккаунту
+    tg = c.post("/api/auth/telegram", json=tg_payload()).json()["me"]
     assert tg["id"] == me["id"] and tg["via"] == {"telegram": True, "google": False, "email": False, "phone": True}
     other = fresh(site)
     other.post("/api/login", json={"name": "Боря", "phone": "+375299998877"})
-    google(monkeypatch, sub="g-boris", email="b@example.com")
-    other.post("/api/auth/google", json={"credential": "x" * 30})
-    google(monkeypatch, sub="g-boris", email="b@example.com")
-    assert c.post("/api/auth/google", json={"credential": "x" * 30}).status_code == 409   # чужой Google к моему аккаунту не пристегнуть
-
-
-def test_accounts_telegram_and_old_phone_users_migrate(tmp_path):
-    import sqlite3
-    path = tmp_path / "old.db"
-    old = sqlite3.connect(path)
-    old.executescript("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT NOT NULL UNIQUE, created_ts INTEGER NOT NULL);"
-                      "INSERT INTO users (name, phone, created_ts) VALUES ('Старый', '375291234567', 1);")
-    old.close()
-    init_db(path)
-    conn = connect(path)
-    assert conn.execute("SELECT name, phone, telegram_id FROM users").fetchone()["name"] == "Старый"
-    conn.execute("INSERT INTO users (name, telegram_id, created_ts) VALUES ('Без телефона', 5, 2)")      # телефон теперь необязателен
+    assert other.post("/api/auth/telegram", json=tg_payload()).status_code == 409        # чужой Telegram не пристегнуть
 
 
 # ---------- единая бронь сайта и бота ----------

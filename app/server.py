@@ -67,7 +67,7 @@ class Limiter:
 def create_app(settings: Settings) -> FastAPI:
     init_db(settings.db_path)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    login_limit, admin_limit, code_limit = Limiter(10, 60), Limiter(5, 60), Limiter(5, 600)
+    login_limit, admin_limit = Limiter(10, 60), Limiter(5, 60)
     sig = {"v": None}          # отпечаток броней: так замечаем, что бот (другая программа) что-то записал в общую базу
 
     def db():
@@ -230,12 +230,9 @@ def create_app(settings: Settings) -> FastAPI:
 
     @app.get("/api/auth/providers")
     async def auth_providers():
-        """Какие способы входа настроены. Не настроенные кнопка показывает неактивными."""
-        tg, g = bool(settings.telegram_bot_username), bool(settings.google_client_id)
-        return {"telegram": {"enabled": tg, "bot": settings.telegram_bot_username,
-                             "bot_id": int(settings.telegram_bot_token.split(":")[0]) if tg and settings.telegram_bot_token.split(":")[0].isdigit() else None},
-                "google": {"enabled": g, "client_id": settings.google_client_id if g else ""},
-                "email": {"enabled": True, "dev": not providers.smtp_ready(settings)}}
+        """Какие способы входа настроены. Сейчас это только Telegram."""
+        tg = bool(settings.telegram_bot_username)
+        return {"telegram": {"enabled": tg}}
 
     @app.post("/api/auth/telegram/start")
     async def tg_start(request: Request):
@@ -281,55 +278,6 @@ def create_app(settings: Settings) -> FastAPI:
         conn = db()
         try:
             row = accounts.sign_in(conn, "telegram_id", tg["id"], tg["name"], current_id=cur["id"] if cur else None)
-            return finish_login(conn, row, request)
-        finally:
-            conn.close()
-
-    @app.post("/api/auth/google")
-    async def auth_google(request: Request):
-        login_limit.hit(client_ip(request))
-        data = await read_json(request)
-        info = await asyncio.to_thread(providers.verify_google, data.get("credential"), settings.google_client_id)
-        cur = current_user(request)
-        conn = db()
-        try:
-            row = accounts.sign_in(conn, "google_sub", info["sub"], info["name"] or (info["email"] or "").split("@")[0],
-                                   current_id=cur["id"] if cur else None, email=info["email"])
-            return finish_login(conn, row, request)
-        finally:
-            conn.close()
-
-    EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}\.[^@\s.]{2,}$")
-
-    def clean_email(raw) -> str:
-        email = raw.strip().lower() if isinstance(raw, str) else ""
-        if len(email) > 254 or not EMAIL_RE.match(email):
-            raise BookingError("bad_email", "Введите настоящий адрес почты.")
-        return email
-
-    @app.post("/api/auth/email/request")
-    async def auth_email_request(request: Request):
-        login_limit.hit(client_ip(request))
-        email = clean_email((await read_json(request)).get("email"))
-        conn = db()
-        try:
-            code = providers.issue_code(conn, email)
-        finally:
-            conn.close()
-        await asyncio.to_thread(providers.send_code, settings, email, code)
-        return {"ok": True, "dev": not providers.smtp_ready(settings)}
-
-    @app.post("/api/auth/email/verify")
-    async def auth_email_verify(request: Request):
-        code_limit.hit(client_ip(request))
-        data = await read_json(request)
-        email = clean_email(data.get("email"))
-        cur = current_user(request)
-        conn = db()
-        try:
-            providers.check_code(conn, email, data.get("code"))
-            row = accounts.sign_in(conn, "email", email, data.get("name") or email.split("@")[0],
-                                   current_id=cur["id"] if cur else None)
             return finish_login(conn, row, request)
         finally:
             conn.close()
