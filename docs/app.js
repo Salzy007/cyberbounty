@@ -385,29 +385,13 @@ $("#loginForm").addEventListener("submit", async (e) => {
     phoneTok = st.token;
     $("#phoneBotLink").href = st.url;
     $("#codeErr").hidden = true; $("#codeForm").reset();
-    if (st.mode === "tg") {                   // номер уже привязан к Telegram: подтверждаем одним нажатием в боте
-      $("#codeLabel").hidden = true; $("#codeSubmit").hidden = true;
-      $("#codeStatus").textContent = "Откройте бота и нажмите «Да, войти». Код вводить не нужно.";
-      showPanel("code");
-      pollTelegramLogin(st.token);
-    } else {                                  // первый вход по номеру: бот пришлёт код, номер подтвердит кнопкой
-      $("#codeLabel").hidden = false; $("#codeSubmit").hidden = false;
-      $("#codeStatus").textContent = "Ждём сообщение от бота…";
-      showPanel("code");
-      pollPhone(st.token);
-    }
+    $("#codeLabel").hidden = false; $("#codeSubmit").hidden = false;     // по номеру всегда код: бот пришлёт его в Telegram
+    $("#codeStatus").textContent = "Ждём сообщение от бота…";
+    showPanel("code");
+    pollPhone(st.token);
   } catch (ex) { err.textContent = ex.message; err.hidden = false; }
   finally { setBusy(btn, false); }
 });
-async function pollTelegramLogin(token) {   // ждём, пока в боте нажмут «Да, войти» (до 10 минут)
-  for (let i = 0; i < 300 && phoneTok === token && !$("#codeForm").hidden; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
-    try {
-      const r = await api("/auth/telegram/poll", { method: "POST", body: { token } });
-      if (r.me) { finishAuth(async () => r); return; }
-    } catch (ex) { $("#codeErr").textContent = ex.message; $("#codeErr").hidden = false; return; }
-  }
-}
 async function pollPhone(token) {            // раз в 2 секунды спрашиваем, пришёл ли код в Telegram (до 10 минут)
   for (let i = 0; i < 300 && phoneTok === token && !$("#codeForm").hidden; i++) {
     await new Promise((r) => setTimeout(r, 2000));

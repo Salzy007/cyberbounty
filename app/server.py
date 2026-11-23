@@ -263,9 +263,6 @@ def create_app(settings: Settings) -> FastAPI:
                 raise BookingError("expired", "Время входа вышло. Нажмите кнопку ещё раз.", 410)
             if row["telegram_id"] is None:
                 return {"status": "pending"}
-            if row["expect_tg"] and row["telegram_id"] != row["expect_tg"]:
-                conn.execute("DELETE FROM tg_logins WHERE token_hash = ?", (row["token_hash"],))
-                raise BookingError("wrong_tg", "Этот Telegram не привязан к вашему номеру. Войдите по номеру: бот пришлёт код.", 403)
             conn.execute("DELETE FROM tg_logins WHERE token_hash = ?", (row["token_hash"],))      # секрет одноразовый
             cur = current_user(request)
             user = accounts.sign_in(conn, "telegram_id", row["telegram_id"], row["name"], current_id=cur["id"] if cur else None)
@@ -298,19 +295,12 @@ def create_app(settings: Settings) -> FastAPI:
         secret = secrets.token_urlsafe(24)
         conn = db()
         try:
-            known = conn.execute("SELECT telegram_id FROM users WHERE phone = ?", (phone,)).fetchone()
-            if known and known["telegram_id"]:
-                # номер уже подтверждён и привязан к Telegram: вход в один клик, но только с этого Telegram
-                conn.execute("DELETE FROM tg_logins WHERE expires_ts < ?", (int(time.time()),))
-                conn.execute("INSERT INTO tg_logins (token_hash, expires_ts, expect_tg) VALUES (?, ?, ?)",
-                             (_hash(secret), int(time.time()) + providers.PHONE_CODE_TTL, known["telegram_id"]))
-                return {"token": secret, "url": f"https://t.me/{bot}?start=login_{secret}", "bot": bot, "mode": "tg"}
             conn.execute("DELETE FROM phone_logins WHERE expires_ts < ?", (int(time.time()),))
             conn.execute("INSERT INTO phone_logins (token_hash, phone, name, expires_ts) VALUES (?, ?, ?, ?)",
                          (_hash(secret), phone, name, int(time.time()) + providers.PHONE_CODE_TTL))
         finally:
             conn.close()
-        return {"token": secret, "url": f"https://t.me/{bot}?start=phone_{secret}", "bot": bot, "mode": "contact"}
+        return {"token": secret, "url": f"https://t.me/{bot}?start=phone_{secret}", "bot": bot}
 
     def phone_row(conn, token):
         if not isinstance(token, str) or not 10 <= len(token) <= 64:
