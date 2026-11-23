@@ -15,6 +15,20 @@
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.documentElement.classList.add(reduce ? "ready" : "intro-on");   /* заставка при каждой загрузке и обновлении */
+  /* высота экрана фиксируется в пикселях: в Google, Telegram и других встроенных браузерах панель при прокрутке
+     выезжает и прячется, окно меняет высоту каждый кадр, и всё, что задано в vh/svh/vmax, сжималось и разжималось.
+     Пересчитываем только при смене ширины (поворот телефона); на компьютере с мышью — при любом изменении окна. */
+  var root = document.documentElement, lastW = -1, desk = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  var size = function () {
+    var w = innerWidth, h = innerHeight;
+    if (!desk && w === lastW) return;
+    lastW = w;
+    var big = Math.max(screen.height || 0, screen.width || 0, h);                 // выше любого возможного окна: фон не меняет размер
+    root.style.setProperty("--app-h", h + "px");
+    root.style.setProperty("--bg-h", big + "px");
+    root.style.setProperty("--u", Math.max(w, h) / 100 + "px");                     // замена 1vmax, не зависит от панели браузера
+  };
+  size(); addEventListener("resize", size);
   /* после F5 всегда начинаем с самого верха, а не с запомненного места */
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   if (location.hash) history.replaceState(null, "", location.pathname + location.search);
