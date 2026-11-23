@@ -320,7 +320,7 @@ function loadScript(src) {
 function markLinked() {
   const linked = !!(S.me && S.me.via && S.me.via.telegram);
   const btn = $('[data-p="telegram"]'), hint = $(".auth__hint", btn.closest(".auth__row"));
-  if (!linked) return;
+  if (!linked) { renderProviders(); return; }   // вышли из аккаунта — кнопка снова рабочая
   btn.disabled = true; hint.textContent = "Telegram уже привязан к вашему аккаунту."; hint.hidden = false;
 }
 function openLogin(link = false) {
