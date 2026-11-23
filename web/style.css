@@ -221,8 +221,8 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 
 /* мобильная панель */
 .dock { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: none; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 18px; background: rgba(13, 15, 40, .92); backdrop-filter: blur(16px); border: 1px solid var(--line2); box-shadow: 0 14px 50px -8px #000, 0 0 30px -10px rgba(53, 230, 255, .4);
-  transform: translate3d(0, 130%, 0); opacity: 0; transition: transform .45s var(--ease), opacity .3s; pointer-events: none; }
-.dock.on { transform: none; opacity: 1; pointer-events: auto; }
+  transform: translate3d(0, 130%, 0); opacity: 0; visibility: hidden; transition: transform .45s var(--ease), opacity .3s, visibility 0s .45s; pointer-events: none; }
+.dock.on { transform: none; opacity: 1; visibility: visible; transition-delay: 0s; pointer-events: auto; }
 .dock__info { display: grid; min-width: 0; line-height: 1.25; }
 .dock__info b { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dock__info span { color: var(--muted); font: 600 13px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -443,7 +443,6 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 .intro { display: none; }
 html.intro-on .intro { display: grid; position: fixed; inset: 0; z-index: 200; place-items: center; }
 html.intro-on:not(.intro-end) body { overflow: hidden; }
-html.intro-on:not(.intro-end) .edge { display: none; }
 html.intro-end .intro { display: none; }
 html.intro-end .intro__core { display: none; }
 .intro__half { position: absolute; left: 0; right: 0; height: 50.2%; background: #05040f; transition: transform .95s var(--ease) .3s, box-shadow 1.4s ease .3s, border-color 1.4s ease .3s; will-change: transform; }
@@ -583,16 +582,6 @@ html:not(.ready) .top { opacity: 0; transform: translateY(-14px); }
 @keyframes sndHint { 0% { opacity: .8; transform: scale(.96); } 100% { opacity: 0; transform: scale(1.12); } }
 .how__ctl { flex-wrap: wrap; }
 
-/* неоновое свечение по верхнему и нижнему краю: появляется плавно в момент раскрытия заставки и остаётся навсегда.
-   Мягкий градиент + слегка размытая яркая линия у самого края. */
-.edge { position: fixed; left: 0; right: 0; height: 64px; z-index: 60; pointer-events: none; opacity: 0; transition: opacity 1.2s ease; }
-html.edge-on .edge { opacity: 1; }
-.edge--t { top: 0; background: linear-gradient(180deg, rgba(53, 230, 255, .30), rgba(53, 230, 255, .10) 45%, transparent); }
-.edge--b { bottom: 0; background: linear-gradient(0deg, rgba(53, 230, 255, .30), rgba(53, 230, 255, .10) 45%, transparent); }
-.edge::before { content: ""; position: absolute; left: 0; right: 0; height: 2px; background: rgba(120, 240, 255, .9); filter: blur(1.6px); box-shadow: 0 0 16px 2px rgba(53, 230, 255, .55); animation: edgeBreath 7s ease-in-out infinite alternate; }
-.edge--t::before { top: 0; }
-.edge--b::before { bottom: 0; }
-@keyframes edgeBreath { from { opacity: 1; } to { opacity: .8; } }
 
 /* ---------- телефон и планшет: без зума, без лишних эффектов, стабильный макет ---------- */
 html, body { touch-action: pan-y; }
@@ -609,10 +598,10 @@ body { overscroll-behavior-x: none; }
   /* WebKit (все браузеры на iPhone) перерисовывает анимацию внутри SVG каждый кадр: на телефоне логотип стоит */
   .ring { animation: none; }
   /* фильтры и маски заставляют видеокарту делать лишние проходы на каждом кадре прокрутки */
-  .edge::before { filter: none; box-shadow: none; }
   .times { mask-image: none; -webkit-mask-image: none; }
+  /* пока палец листает страницу, бегущие строки, пульс и ролик стоят: вся мощность уходит на прокрутку (Telegram) */
+  html.scrolling .ticker__track, html.scrolling .mrow, html.scrolling .live-dot::after, html.scrolling .how *, html.scrolling .how *::before, html.scrolling .how *::after { animation-play-state: paused !important; }
   .marquee { mask-image: none; -webkit-mask-image: none; }
-  .edge::before { animation: none; }
   .top.stuck { background: rgba(6, 7, 13, .94); }
   .menu { background: rgba(6, 7, 13, .98); }
   .dock { background: rgba(13, 15, 40, .98); }
