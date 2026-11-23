@@ -605,7 +605,12 @@ body { overscroll-behavior-x: none; }
   .bg__orbs { transform: none !important; will-change: auto; }
   .bg__grid--hot, #fx, .glow { display: none !important; }
   .how__aura { animation: none; }
-  .sum__glow { animation: none; }
+  .sum__glow { display: none; }
+  /* WebKit (все браузеры на iPhone) перерисовывает анимацию внутри SVG каждый кадр: на телефоне логотип стоит */
+  .ring { animation: none; }
+  /* фильтры и маски заставляют видеокарту делать лишние проходы на каждом кадре прокрутки */
+  .edge::before { filter: none; box-shadow: none; }
+  .times { mask-image: none; -webkit-mask-image: none; }
   .marquee { mask-image: none; -webkit-mask-image: none; }
   .edge::before { animation: none; }
   .top.stuck { background: rgba(6, 7, 13, .94); }
