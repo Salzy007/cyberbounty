@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS tg_logins (                 -- вход через с
     name         TEXT,
     expires_ts   INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS phone_logins (              -- вход по телефону: код приходит в Telegram-бот
+    token_hash   TEXT PRIMARY KEY,                     -- sha256 от секрета из ссылки
+    phone        TEXT NOT NULL,                        -- цифры, как введены на сайте
+    name         TEXT NOT NULL,
+    tg_id        INTEGER,                              -- Telegram, который подтвердил номер (кнопкой «Поделиться номером»)
+    code_hash    TEXT,                                 -- sha256(token_hash:код); пусто, пока код не отправлен
+    attempts     INTEGER NOT NULL DEFAULT 0,
+    expires_ts   INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS email_codes (               -- одноразовые коды входа по почте (хранится только хэш)
     email       TEXT PRIMARY KEY,
     code_hash   TEXT NOT NULL,

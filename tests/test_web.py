@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from app import booking
 from app.config import Settings
 from app.server import create_app
+from _phone import phone_login
 
 PASSWORD = "test-pass-123"
 JSON = {"content-type": "application/json"}
@@ -15,7 +16,7 @@ JSON = {"content-type": "application/json"}
 
 @pytest.fixture()
 def site(tmp_path):
-    app = create_app(Settings(admin_password=PASSWORD, db_path=tmp_path / "w.db"))
+    app = create_app(Settings(admin_password=PASSWORD, db_path=tmp_path / "w.db", telegram_bot_username="cb_test_bot"))
     return TestClient(app)
 
 
@@ -29,9 +30,7 @@ def first_slot(site, zone="standard", hours=1):
 
 
 def login(client, name="Аня", phone="+375 29 111-22-33"):
-    r = client.post("/api/login", json={"name": name, "phone": phone})
-    assert r.status_code == 200, r.text
-    return r.json()["me"]
+    return phone_login(client, name, phone)
 
 
 def test_public_pages_and_config(site):
@@ -47,7 +46,7 @@ def test_booking_requires_login(site):
 
 
 def test_login_validates_and_same_phone_same_account(site):
-    assert site.post("/api/login", json={"name": "A", "phone": "123"}).status_code == 400
+    assert site.post("/api/auth/phone/start", json={"name": "A", "phone": "123"}).status_code == 400
     a = login(site)
     b = login(TestClient(site.app), phone="375291112233")           # тот же номер другим написанием
     assert a["id"] == b["id"]
@@ -122,8 +121,8 @@ def test_admin_disabled_without_password(tmp_path):
 
 
 def test_foreign_origin_and_plain_form_blocked(site):
-    assert site.post("/api/login", json={"name": "Аня", "phone": "375291112233"}, headers={"origin": "https://evil.example"}).status_code == 403
-    assert site.post("/api/login", content="name=a", headers={"content-type": "text/plain"}).status_code == 415
+    assert site.post("/api/auth/phone/start", json={"name": "Аня", "phone": "375291112233"}, headers={"origin": "https://evil.example"}).status_code == 403
+    assert site.post("/api/auth/phone/start", content="name=a", headers={"content-type": "text/plain"}).status_code == 415
 
 
 def test_login_rate_limit(site):

@@ -63,3 +63,36 @@ def telegram_account(conn, tg_user: dict):
     """Для mini app в боте: аккаунт человека по его Telegram id (создаётся при первом заходе)."""
     name = " ".join(filter(None, [tg_user.get("first_name"), tg_user.get("last_name")])) or tg_user.get("username") or ""
     return sign_in(conn, "telegram_id", tg_user["id"], name)
+
+
+def link_phone_telegram(conn, phone: str, tg_id: int, name: str, current_id: int | None = None):
+    """Вход по телефону, подтверждённому в Telegram: находим или создаём аккаунт по номеру и Telegram id.
+    Если номер и Telegram принадлежат разным аккаунтам — не склеиваем молча, а отказываем."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        by_phone, by_tg = _by(conn, "phone", phone), _by(conn, "telegram_id", tg_id)
+        if (by_tg is not None and by_tg["phone"] and by_tg["phone"] != phone) or                 (by_phone is not None and by_phone["telegram_id"] and by_phone["telegram_id"] != tg_id):
+            raise BookingError("linked_other", "Этот Telegram или номер уже привязан к другому аккаунту.", 409)
+        ids = {r["id"] for r in (by_phone, by_tg) if r is not None}
+        if current_id is not None:
+            if ids - {current_id}:
+                raise BookingError("linked_other", "Этот номер или Telegram уже привязан к другому аккаунту.", 409)
+            uid = current_id
+        elif len(ids) > 1:
+            raise BookingError("linked_other", "Этот номер и Telegram привязаны к разным аккаунтам. Напишите администратору.", 409)
+        elif ids:
+            uid = ids.pop()
+        else:
+            uid = conn.execute("INSERT INTO users (name, phone, telegram_id, created_ts) VALUES (?, ?, ?, ?)",
+                               (" ".join((name or "").split())[:60] or "Игрок", phone, tg_id, int(time.time()))).lastrowid
+        row = get(conn, uid)
+        if row["phone"] is None:
+            conn.execute("UPDATE users SET phone = ? WHERE id = ?", (phone, uid))
+        if row["telegram_id"] is None:
+            conn.execute("UPDATE users SET telegram_id = ? WHERE id = ?", (tg_id, uid))
+        conn.execute("COMMIT")
+    except BaseException:
+        if conn.in_transaction:
+            conn.execute("ROLLBACK")
+        raise
+    return get(conn, uid)

@@ -67,6 +67,7 @@ class Limiter:
 def create_app(settings: Settings) -> FastAPI:
     init_db(settings.db_path)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    app.state.db_path = settings.db_path
     login_limit, admin_limit = Limiter(10, 60), Limiter(5, 60)
     sig = {"v": None}          # отпечаток броней: так замечаем, что бот (другая программа) что-то записал в общую базу
 
@@ -282,19 +283,63 @@ def create_app(settings: Settings) -> FastAPI:
         finally:
             conn.close()
 
-    @app.post("/api/login")
-    async def login(request: Request):
+    @app.post("/api/auth/phone/start")
+    async def phone_start(request: Request):
+        """Шаг 1: имя и телефон. Даём ссылку на бота: там человек поделится номером, и бот пришлёт код в Telegram."""
         login_limit.hit(client_ip(request))
         data = await read_json(request)
         name, phone = clean_name(data.get("name")), clean_phone(data.get("phone"))
+        bot = settings.telegram_bot_username
+        if not bot:
+            raise BookingError("off", "Вход по телефону пока не настроен. Войдите через Telegram.", 503)
+        secret = secrets.token_urlsafe(24)
         conn = db()
         try:
-            row = conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
-            if row:
-                conn.execute("UPDATE users SET name = ? WHERE id = ?", (name, row["id"]))
-                user = accounts.get(conn, row["id"])
-            else:
-                user = accounts.sign_in(conn, "phone", phone, name)
+            conn.execute("DELETE FROM phone_logins WHERE expires_ts < ?", (int(time.time()),))
+            conn.execute("INSERT INTO phone_logins (token_hash, phone, name, expires_ts) VALUES (?, ?, ?, ?)",
+                         (_hash(secret), phone, name, int(time.time()) + providers.PHONE_CODE_TTL))
+        finally:
+            conn.close()
+        return {"token": secret, "url": f"https://t.me/{bot}?start=phone_{secret}", "bot": bot}
+
+    def phone_row(conn, token):
+        if not isinstance(token, str) or not 10 <= len(token) <= 64:
+            raise BookingError("expired", "Время входа вышло. Начните заново.", 410)
+        row = conn.execute("SELECT * FROM phone_logins WHERE token_hash = ? AND expires_ts > ?",
+                           (_hash(token), int(time.time()))).fetchone()
+        if not row:
+            raise BookingError("expired", "Время входа вышло. Начните заново.", 410)
+        return row
+
+    @app.post("/api/auth/phone/poll")
+    async def phone_poll(request: Request):
+        data = await read_json(request)
+        conn = db()
+        try:
+            row = phone_row(conn, data.get("token"))
+            return {"status": "code" if row["code_hash"] else "pending"}
+        finally:
+            conn.close()
+
+    @app.post("/api/auth/phone/verify")
+    async def phone_verify(request: Request):
+        data = await read_json(request)
+        token, code = data.get("token"), data.get("code")
+        conn = db()
+        try:
+            row = phone_row(conn, token)
+            if not row["code_hash"]:
+                raise BookingError("no_code", "Код ещё не пришёл. Откройте бота и поделитесь номером.", 400)
+            if row["attempts"] >= providers.PHONE_CODE_ATTEMPTS:
+                raise BookingError("bad_code", "Слишком много неверных попыток. Начните вход заново.", 429)
+            if not isinstance(code, str) or not hmac.compare_digest(
+                    providers.phone_code_hash(row["token_hash"], code.strip()), row["code_hash"]):
+                conn.execute("UPDATE phone_logins SET attempts = attempts + 1 WHERE token_hash = ?", (row["token_hash"],))
+                raise BookingError("bad_code", "Неверный код.", 400)
+            conn.execute("DELETE FROM phone_logins WHERE token_hash = ?", (row["token_hash"],))      # код одноразовый
+            cur = current_user(request)
+            user = accounts.link_phone_telegram(conn, row["phone"], row["tg_id"], row["name"],
+                                                current_id=cur["id"] if cur else None)
             return finish_login(conn, user, request)
         finally:
             conn.close()

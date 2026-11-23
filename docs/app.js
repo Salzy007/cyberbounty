@@ -287,7 +287,7 @@ function renderAuth() {
 }
 /* способы входа: что настроено на сервере (в демо — всё включено, но это имитация) */
 const AUTH = { providers: null, link: false, tgReady: null };
-const loginPanels = { main: "#lgMain", phone: "#loginForm" };
+const loginPanels = { main: "#lgMain", phone: "#loginForm", code: "#codeForm" };
 function showPanel(name) {
   Object.entries(loginPanels).forEach(([k, sel]) => { $(sel).hidden = k !== name; });
   const first = $("input", $(loginPanels[name]));
@@ -319,7 +319,7 @@ function openLogin(link = false) {
   AUTH.link = link === true;
   $("#loginT").textContent = AUTH.link ? "Привязать способ входа" : "Вход в CyberBounty";
   $("#loginSub").textContent = AUTH.link ? "Добавьте ещё один способ — вы останетесь в том же аккаунте со всеми бронями." : "Любой способ ведёт в один аккаунт: брони с сайта и из Telegram будут вместе.";
-  ["#loginErr", "#phoneErr"].forEach((id) => { $(id).hidden = true; });
+  ["#loginErr", "#phoneErr", "#codeErr"].forEach((id) => { $(id).hidden = true; });
   showPanel("main"); closeMenu(); openModal($("#mLogin"));
   if (!AUTH.providers) loadProviders();
   else if (!CB_DEMO && AUTH.providers.telegram.enabled) loadTelegramScript().catch(() => {});
@@ -362,11 +362,40 @@ $("#lgMain").addEventListener("click", async (e) => {
 $("#lgPhoneOpen").addEventListener("click", () => showPanel("phone"));
 $$("#mLogin [data-back]").forEach((b) => b.addEventListener("click", () => showPanel("main")));
 
+let phoneTok = null;                          // токен входа по телефону, пока ждём код из Telegram
 $("#loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, btn = $(".btn", f), err = $("#phoneErr");
+  err.hidden = true; setBusy(btn, true);
+  try {
+    if (CB_DEMO) {                            // демо-страница: без бота, вход сразу
+      await finishAuth(() => api("/login", { method: "POST", body: { name: f.name.value, phone: f.phone.value } }), err);
+      return;
+    }
+    const st = await api("/auth/phone/start", { method: "POST", body: { name: f.name.value, phone: f.phone.value } });
+    phoneTok = st.token;
+    $("#phoneBotLink").href = st.url;
+    $("#codeStatus").textContent = "Ждём сообщение от бота…";
+    $("#codeErr").hidden = true; $("#codeForm").reset();
+    showPanel("code");
+    pollPhone(st.token);
+  } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+  finally { setBusy(btn, false); }
+});
+async function pollPhone(token) {            // раз в 2 секунды спрашиваем, пришёл ли код в Telegram (до 10 минут)
+  for (let i = 0; i < 300 && phoneTok === token && !$("#codeForm").hidden; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      const r = await api("/auth/phone/poll", { method: "POST", body: { token } });
+      if (r.status === "code") { $("#codeStatus").textContent = "Код пришёл в Telegram. Введите его ниже."; return; }
+    } catch (ex) { $("#codeStatus").textContent = ex.message; return; }
+  }
+}
+$("#codeForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const f = e.target, btn = $(".btn", f);
   setBusy(btn, true);
-  await finishAuth(() => api("/login", { method: "POST", body: { name: f.name.value, phone: f.phone.value } }), $("#phoneErr"));
+  await finishAuth(() => api("/auth/phone/verify", { method: "POST", body: { token: phoneTok, code: f.code.value } }), $("#codeErr"));
   setBusy(btn, false);
 });
 $("#mLogin").addEventListener("click", (e) => { if (e.target.closest("[data-close]")) S.pending = false; });

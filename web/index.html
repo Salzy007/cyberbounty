@@ -490,11 +490,22 @@
     <form class="lgn" id="loginForm" novalidate hidden>
       <button class="lgn__back" type="button" data-back aria-label="Назад"><svg class="ic"><use href="#i-back"/></svg>Назад</button>
       <h3>Имя и телефон</h3>
-      <p class="muted-s">Запасной вход: чтобы найти вашу бронь. Пароль не нужен.</p>
+      <p class="muted-s">Код для входа придёт в Telegram (не по SMS). Нужен Telegram на этом номере.</p>
       <label class="field"><span>Имя</span><input name="name" type="text" autocomplete="name" maxlength="40" placeholder="Например, Андрей" required></label>
       <label class="field"><span>Телефон</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+375 29 123-45-67" required></label>
       <p class="field__err" id="phoneErr" role="alert" hidden></p>
       <button class="btn btn--hot btn--block" type="submit"><span class="btn__t">Продолжить</span><i class="spin" aria-hidden="true"></i></button>
+    </form>
+
+    <form class="lgn" id="codeForm" novalidate hidden>
+      <button class="lgn__back" type="button" data-back aria-label="Назад"><svg class="ic"><use href="#i-back"/></svg>Назад</button>
+      <h3>Код из Telegram</h3>
+      <p class="muted-s">Код придёт <b>в Telegram</b>, а не по SMS. Откройте бота и нажмите «Поделиться номером»: бот проверит ваш номер и пришлёт код сюда. Код действует 10 минут.</p>
+      <a class="btn btn--ghost btn--block" id="phoneBotLink" href="https://t.me/cyberbounty_bot" target="_blank" rel="noopener">Открыть бота<svg class="ic"><use href="#i-telegram"/></svg></a>
+      <p class="muted-s" id="codeStatus">Ждём сообщение от бота…</p>
+      <label class="field"><span>Код из бота</span><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" required></label>
+      <p class="field__err" id="codeErr" role="alert" hidden></p>
+      <button class="btn btn--hot btn--block" type="submit"><span class="btn__t">Войти</span><i class="spin" aria-hidden="true"></i></button>
     </form>
   </div>
 </div>

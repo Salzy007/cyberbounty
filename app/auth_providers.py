@@ -6,6 +6,13 @@ import time
 from app.booking import BookingError
 
 TG_MAX_AGE = 24 * 3600
+PHONE_CODE_TTL = 10 * 60
+PHONE_CODE_ATTEMPTS = 5
+
+
+def phone_code_hash(token_hash: str, code: str) -> str:
+    """Код хранится только хэшем. Бот считает ту же формулу (см. bot.py)."""
+    return hashlib.sha256(f"{token_hash}:{code}".encode()).hexdigest()
 
 
 # ---------- Telegram Login Widget ----------
