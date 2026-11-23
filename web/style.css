@@ -9,7 +9,7 @@
   --r: 18px; --head: 68px;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { scroll-padding-top: calc(var(--head) + 12px); scrollbar-gutter: stable; background: var(--ink); }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--head) + 12px); scrollbar-gutter: stable; background: var(--ink); }
 body { margin: 0; color: var(--text); background: transparent; font: 500 16px/1.55 var(--font); overflow-x: clip; text-size-adjust: 100%; }
 body.lock { overflow: hidden; }
 [hidden] { display: none !important; }

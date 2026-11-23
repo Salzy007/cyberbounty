@@ -315,12 +315,20 @@ async function loadProviders() {
 function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.async = true; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
 }
+/* уже привязанный способ не предлагаем снова: кнопка неактивна и с подписью */
+function markLinked() {
+  const linked = !!(S.me && S.me.via && S.me.via.telegram);
+  const btn = $('[data-p="telegram"]'), hint = $(".auth__hint", btn.closest(".auth__row"));
+  if (!linked) return;
+  btn.disabled = true; hint.textContent = "Telegram уже привязан к вашему аккаунту."; hint.hidden = false;
+}
 function openLogin(link = false) {
   AUTH.link = link === true;
   $("#loginT").textContent = AUTH.link ? "Привязать способ входа" : "Вход в CyberBounty";
   $("#loginSub").textContent = AUTH.link ? "Добавьте ещё один способ — вы останетесь в том же аккаунте со всеми бронями." : "Любой способ ведёт в один аккаунт: брони с сайта и из Telegram будут вместе.";
   ["#loginErr", "#phoneErr", "#codeErr"].forEach((id) => { $(id).hidden = true; });
   showPanel("main"); closeMenu(); openModal($("#mLogin"));
+  markLinked();
   if (!AUTH.providers) loadProviders();
   else if (!CB_DEMO && AUTH.providers.telegram.enabled) loadTelegramScript().catch(() => {});
 }
