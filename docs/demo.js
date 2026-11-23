@@ -265,6 +265,17 @@
       var usr = needUser(now);
       return { bookings: db.bookings.filter(function (b) { return b.user_id === usr.id; }).sort(function (a, b) { return b.start_ts - a.start_ts; }).slice(0, 50).map(view) };
     }
+    if (method === "DELETE" && (m = path.match(/^\/bookings\/(\d+)$/))) {
+      var uid = needUser(now).id, db1 = db.bookings.filter(function (x) { return x.id === +m[1]; })[0];
+      if (!db1 || db1.user_id !== uid) throw Err("no_booking", "Такой брони нет.", 404);
+      if (db1.status !== "canceled" && db1.end_ts > now) throw Err("active", "Стереть можно только отменённую или прошедшую бронь.", 409);
+      db.bookings = db.bookings.filter(function (x) { return x !== db1; }); bump(); return { ok: true };
+    }
+    if (method === "POST" && path === "/my-bookings/clear") {
+      var uid2 = needUser(now).id, before = db.bookings.length;
+      db.bookings = db.bookings.filter(function (x) { return !(x.user_id === uid2 && x.status === "canceled"); }); bump();
+      return { removed: before - db.bookings.length };
+    }
     if (method === "POST" && (m = path.match(/^\/bookings\/(\d+)\/cancel$/))) { var c = cancelByClient(+m[1], needUser(now).id, now); bump(); return { booking: c }; }
     if (method === "POST" && path === "/admin/login") {
       if (typeof body.password !== "string" || body.password !== ADMIN_PASSWORD) throw Err("denied", "Неверный пароль.", 403);

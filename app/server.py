@@ -385,6 +385,28 @@ def create_app(settings: Settings) -> FastAPI:
         hub.publish(0, user["id"])
         return {"booking": canceled}
 
+    @app.delete("/api/bookings/{booking_id}")
+    async def delete_mine(booking_id: int, request: Request):
+        user = need_user(request)
+        conn = db()
+        try:
+            booking.delete_by_client(conn, booking_id, user["id"])
+        finally:
+            conn.close()
+        hub.publish(0, user["id"])
+        return {"ok": True}
+
+    @app.post("/api/my-bookings/clear")
+    async def clear_mine(request: Request):
+        user = need_user(request)
+        conn = db()
+        try:
+            removed = booking.clear_mine(conn, user["id"])
+        finally:
+            conn.close()
+        hub.publish(0, user["id"])
+        return {"removed": removed}
+
     # ---------- владелец ----------
 
     @app.post("/api/admin/login")

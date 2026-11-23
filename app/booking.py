@@ -293,14 +293,15 @@ def delete_booking(conn, booking_id: int) -> None:
     conn.execute("DELETE FROM bookings WHERE id = ? AND status = 'canceled'", (booking_id,))
 
 
-def delete_by_client(conn, booking_id: int, user_id: int) -> dict:
-    """Клиент стирает свою ОТМЕНЁННУЮ бронь."""
+def delete_by_client(conn, booking_id: int, user_id: int, now: float | None = None) -> dict:
+    """Клиент стирает из своего списка отменённую или уже прошедшую бронь. Действующую (идёт/будет) — нельзя."""
+    now = time.time() if now is None else now
     b = get_booking(conn, booking_id)
     if b["user_id"] != user_id:
         raise BookingError("no_booking", "Такой брони нет.", 404)
-    if b["status"] != "canceled":
-        raise BookingError("active", "Стереть можно только отменённую бронь.", 409)
-    conn.execute("DELETE FROM bookings WHERE id = ? AND status = 'canceled'", (booking_id,))
+    if b["status"] != "canceled" and b["end"] > now:
+        raise BookingError("active", "Стереть можно только отменённую или прошедшую бронь.", 409)
+    conn.execute("DELETE FROM bookings WHERE id = ? AND (status = 'canceled' OR end_ts <= ?)", (booking_id, int(now)))
     return b
 
 

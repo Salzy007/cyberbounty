@@ -429,7 +429,7 @@ function bookingCard(b, up) {
     <div class="bk__row"><b>${esc(b.zone)} · ${esc(seatLabel(b))}</b>${st}</div>
     <div class="bk__row"><span class="bk__when">${esc(dateLong(b.start))}, ${esc(b.start_time)}–${esc(b.end_time)}</span><span class="bk__code">${esc(b.code)}</span></div>
     <div class="bk__row"><span class="muted-s">${b.hours} ч</span><b class="price">${b.price} BYN</b></div>
-    ${canCancel ? '<div class="bk__act"><button class="mini" data-act="ask" type="button">Отменить</button></div>' : ""}
+    ${canCancel ? '<div class="bk__act"><button class="mini" data-act="ask" type="button">Отменить</button></div>' : up ? "" : '<div class="bk__act"><button class="mini" data-act="del" type="button">Удалить</button></div>'}
   </article>`;
 }
 function renderMy() {
@@ -437,7 +437,7 @@ function renderMy() {
   const old = S.my.filter((b) => !upcoming(b));
   $("#myList").innerHTML = S.my.length
     ? (up.length ? `<p class="sub-h">Ближайшие</p>${up.map((b) => bookingCard(b, true)).join("")}` : "")
-      + (old.length ? `<p class="sub-h">История</p>${old.map((b) => bookingCard(b, false)).join("")}` : "")
+      + (old.length ? `<p class="sub-h">История</p>${old.some((b) => b.status === "canceled") ? '<div class="bk__act"><button class="mini" data-act="clear" type="button">Очистить отменённые</button></div>' : ""}${old.map((b) => bookingCard(b, false)).join("")}` : "")
     : `<div class="empty"><svg class="ic"><use href="#i-ticket"/></svg><p>Пока нет броней.<br>Выберите место — это быстро.</p><button class="btn btn--hot" type="button" data-close data-go="book">Выбрать место</button></div>`;
 }
 function openMy() { closeMenu(); renderMy(); openModal($("#dMy")); loadMy(); }
@@ -447,7 +447,17 @@ $("#myList").addEventListener("click", async (e) => {
   if (go) { setTimeout(() => $("#book").scrollIntoView(), 50); return; }
   const btn = e.target.closest("[data-act]");
   if (!btn) return;
-  const card = btn.closest(".bk"), act = card.querySelector(".bk__act");
+  const card = btn.closest(".bk"), act = card && card.querySelector(".bk__act");
+  if (btn.dataset.act === "clear" || btn.dataset.act === "del") {
+    btn.disabled = true;
+    try {
+      if (btn.dataset.act === "clear") await api("/my-bookings/clear", { method: "POST" });
+      else await api(`/bookings/${card.dataset.id}`, { method: "DELETE" });
+      toast("Удалено");
+      await loadMy();
+    } catch (ex) { toast(ex.message, true); await loadMy(); }
+    return;
+  }
   if (btn.dataset.act === "ask") {
     act.innerHTML = '<button class="mini mini--no" data-act="no" type="button">Оставить</button><button class="mini mini--yes" data-act="yes" type="button">Да, отменить</button>';
   } else if (btn.dataset.act === "no") {
@@ -839,13 +849,13 @@ function setupHow() {
 /* ---------- вступительная заставка ---------- */
 function setupIntro() {
   const html = document.documentElement, intro = $("#intro");
-  if (!html.classList.contains("intro-on")) return;
+  if (!html.classList.contains("intro-on")) { html.classList.add("edge-on"); return; }
   let done = false;
   const finish = () => {
     if (done) return; done = true;
     intro.classList.add("go");
     setTimeout(() => { html.classList.add("ready"); }, 380);                  // герой выезжает, когда створки уже расходятся
-    setTimeout(() => { html.classList.add("intro-end"); }, 1600);          // створки остаются у краёв экрана как свечение
+    setTimeout(() => { html.classList.add("edge-snap", "edge-on", "intro-end"); }, 1600);   // полоски встают на место створок без перехода          // створки остаются у краёв экрана как свечение
   };
   const hero = $(".hero__photo img");
   const loaded = Promise.all([document.fonts ? document.fonts.ready : 0, hero && hero.decode ? hero.decode().catch(() => 0) : 0]);

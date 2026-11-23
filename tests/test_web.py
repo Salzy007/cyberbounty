@@ -128,3 +128,56 @@ def test_foreign_origin_and_plain_form_blocked(site):
 def test_login_rate_limit(site):
     codes = [site.post("/api/admin/login", json={"password": "x"}).status_code for _ in range(7)]
     assert codes[:5] == [403] * 5 and codes[-1] == 429
+
+
+def _book(site, key):
+    start = first_slot(site)
+    r = site.post("/api/bookings", json={"place_id": 1, "start": start, "hours": 1, "key": key})
+    assert r.status_code == 200
+    return r.json()["booking"]
+
+
+def test_client_deletes_own_canceled_only(site):
+    login(site)
+    b = _book(site, "del-key-00001")
+    assert site.delete(f"/api/bookings/{b['id']}").status_code == 409          # действующую нельзя
+    assert site.post(f"/api/bookings/{b['id']}/cancel").status_code == 200
+    # чужую удалить нельзя
+    other = TestClient(site.app)
+    login(other, "Боря", "+375 29 555-66-77")
+    assert other.delete(f"/api/bookings/{b['id']}").status_code == 404
+    assert len(site.get("/api/my-bookings").json()["bookings"]) == 1
+    # свою отменённую — можно, место не занимается и не освобождается повторно
+    assert site.delete(f"/api/bookings/{b['id']}").status_code == 200
+    assert site.get("/api/my-bookings").json()["bookings"] == []
+    assert site.delete(f"/api/bookings/{b['id']}").status_code == 404
+    assert site.post("/api/bookings", json={"place_id": 1, "start": b["start"], "hours": 1, "key": "del-key-00002"}).status_code == 200
+
+
+def test_clear_mine_only_my_canceled(site):
+    login(site)
+    a = _book(site, "clr-key-00001")
+    site.post(f"/api/bookings/{a['id']}/cancel")
+    start2 = first_slot(site) + 7200
+    live = site.post("/api/bookings", json={"place_id": 1, "start": start2, "hours": 1, "key": "clr-key-00002"}).json()["booking"]
+    other = TestClient(site.app)
+    login(other, "Боря", "+375 29 555-66-77")
+    o = other.post("/api/bookings", json={"place_id": 2, "start": start2, "hours": 1, "key": "clr-key-00003"}).json()["booking"]
+    other.post(f"/api/bookings/{o['id']}/cancel")
+    assert site.post("/api/my-bookings/clear").json() == {"removed": 1}
+    assert [x["id"] for x in site.get("/api/my-bookings").json()["bookings"]] == [live["id"]]
+    assert len(other.get("/api/my-bookings").json()["bookings"]) == 1       # у соседа осталась
+    assert TestClient(site.app).delete(f"/api/bookings/{a['id']}").status_code == 401
+
+
+def test_bookings_survive_logout_and_login(site):
+    me = login(site)
+    b = _book(site, "keep-key-0001")
+    c = _book_second = site.post("/api/bookings", json={"place_id": 1, "start": b["start"] + 7200, "hours": 1, "key": "keep-key-0002"}).json()["booking"]
+    site.post(f"/api/bookings/{c['id']}/cancel")
+    assert site.post("/api/logout").status_code == 200
+    assert site.get("/api/my-bookings").status_code == 401
+    again = login(site)                                    # тот же номер, новая сессия
+    assert again["id"] == me["id"]
+    ids = {x["id"]: x["status"] for x in site.get("/api/my-bookings").json()["bookings"]}
+    assert ids == {b["id"]: "confirmed", c["id"]: "canceled"}
