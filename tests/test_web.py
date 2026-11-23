@@ -181,3 +181,13 @@ def test_bookings_survive_logout_and_login(site):
     assert again["id"] == me["id"]
     ids = {x["id"]: x["status"] for x in site.get("/api/my-bookings").json()["bookings"]}
     assert ids == {b["id"]: "confirmed", c["id"]: "canceled"}
+
+
+def test_price_change_changes_signature_and_config(site):
+    before = site.get("/api/config").json()["zones"][0]["price"]
+    r = site.post("/api/admin/login", json={"password": PASSWORD})
+    assert r.status_code == 200
+    v0 = site.get("/api/wait").json()["version"]
+    assert site.patch("/api/admin/zones/standard", json={"price": before + 1}).status_code == 200
+    assert site.get("/api/config").json()["zones"][0]["price"] == before + 1
+    assert site.get("/api/wait").json()["version"] > v0                       # сайт и бот узнают о смене цены сразу

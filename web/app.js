@@ -524,10 +524,22 @@ burger.addEventListener("click", () => { menu.hidden = !menu.hidden; burger.setA
 menu.addEventListener("click", (e) => { if (e.target.closest("a")) closeMenu(); });
 
 /* ---------- мгновенные обновления и «сейчас свободно» ---------- */
+/* цены поменял владелец: подтягиваем без перезагрузки страницы */
+async function syncPrices() {
+  try {
+    const cfg = await api("/config");
+    let changed = false;
+    cfg.zones.forEach((nz) => { const z = S.cfg.zones.find((x) => x.id === nz.id); if (z && z.price !== nz.price) { z.price = nz.price; changed = true; } });
+    if (!changed) return;
+    S.cfg.zones.forEach((z) => { $$(`[data-price="${z.id}"]`).forEach((el) => (el.textContent = `${z.price} BYN / час`)); });
+    renderZones(); updateSummary();
+  } catch (e) { /* не вышло — обновится при следующей проверке */ }
+}
 let refreshTimer = 0;
 function refresh() {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(async () => {
+    await syncPrices();
     await Promise.all([loadSlots(false, true), loadMy(), heroLive()]);
   }, 120);
 }

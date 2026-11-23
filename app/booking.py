@@ -316,7 +316,8 @@ def canceled_owners(conn) -> list[int]:
 
 def signature(conn) -> tuple:
     """Отпечаток всех броней: меняется, когда кто-то (в том числе другая программа — бот) создал или отменил бронь."""
-    return tuple(conn.execute("SELECT COUNT(*), COALESCE(MAX(id), 0), COALESCE(SUM(canceled_ts), 0) FROM bookings").fetchone())
+    prices = tuple(r[0] for r in conn.execute("SELECT price FROM zones ORDER BY id"))      # смена цены владельцем тоже считается изменением
+    return tuple(conn.execute("SELECT COUNT(*), COALESCE(MAX(id), 0), COALESCE(SUM(canceled_ts), 0) FROM bookings").fetchone()) + prices
 
 
 def clear_history(conn) -> int:
