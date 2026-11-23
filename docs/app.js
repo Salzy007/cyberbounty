@@ -282,6 +282,7 @@ function renderAuth() {
   const me = S.me;
   $("#btnMy").hidden = !me; $("#menuMy").hidden = !me;
   $("#btnLogin").hidden = !!me; $("#menuLogin").hidden = !!me;
+  $("#btnLink").hidden = !me || !!(me.via && me.via.telegram && me.via.phone);      // всё уже привязано — кнопка не нужна
   $("#myWho").textContent = me ? me.name + (me.via ? " · " + [me.via.telegram && "Telegram", me.via.google && "Google", me.via.email && "почта", me.via.phone && "телефон"].filter(Boolean).join(", ") : "") : "";
   if (!me) { S.my = []; updateBadge(); }
 }
