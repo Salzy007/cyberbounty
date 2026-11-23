@@ -9,8 +9,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb21e' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5' stroke-dasharray='3.2 2.6'/%3E%3Cpath d='M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%2335e6ff' stroke='none'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/exo2-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/exo2-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts.css?v=5">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="fonts.css?v=6">
+<link rel="stylesheet" href="style.css?v=6">
 <script>
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -23,7 +23,7 @@
 })();
 </script>
 <noscript><style>.intro{display:none!important}.hero__in>*{opacity:1!important;transform:none!important}</style></noscript>
-<script src="nocopy.js?v=5"></script>
+<script src="nocopy.js?v=6"></script>
 </head>
 <body>
 
@@ -51,6 +51,14 @@
     <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-telegram" viewBox="0 0 24 24"><path d="M21.5 3.5L2.5 10.8l6.2 2.3 2.3 6.4 3.1-3.9 4.9 3.7z"/><path d="M8.7 13.1l12.8-9.6"/></symbol>
+    <symbol id="i-instagram" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><path d="M17.4 6.7h.01"/></symbol>
+    <symbol id="i-vk" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5.5"/><path d="M7 9.2l2.4 5.6h1.3V9.2M10.7 12.4l3.7-3.2M10.7 12.4l3.9 2.4"/></symbol>
+    <symbol id="i-tiktok" viewBox="0 0 24 24"><path d="M14 3.5v10.2a3.7 3.7 0 1 1-3.7-3.7"/><path d="M14 3.5c.3 2.6 1.9 4.2 4.6 4.5"/></symbol>
+    <symbol id="i-discord" viewBox="0 0 24 24"><path d="M7 6.3C8.6 5.5 10.3 5 12 5s3.4.5 5 1.3c1.6 2.4 2.6 5.3 2.8 8.9-1.5 1.2-3.2 1.8-4.9 2l-1-1.7M7 6.3C5.4 8.7 4.4 11.6 4.2 15.2c1.5 1.2 3.2 1.8 4.9 2l1-1.7"/><circle cx="9.2" cy="12" r="1.2"/><circle cx="14.8" cy="12" r="1.2"/></symbol>
+    <symbol id="i-google" viewBox="0 0 24 24"><path d="M19.5 11.5c.1.5.1.9.1 1.3a7.6 7.6 0 1 1-2.2-5.4"/><path d="M12.2 12h7.3"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.500"/><path d="M3.500 7.500l8.500 6 8.500-6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
     <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
   </defs>
 </svg>
@@ -110,6 +118,7 @@
     <div class="hero__live" id="heroLive" aria-live="polite">
       <span class="live-dot"></span><span id="heroLiveText">Считаем свободные места…</span>
     </div>
+    <a class="tg-pill" data-tg-link href="https://t.me/cyberbounty_bot" target="_blank" rel="noopener"><svg class="ic"><use href="#i-telegram"/></svg><span>Бронь в Telegram — за полминуты</span><svg class="ic ic--s"><use href="#i-arrow"/></svg></a>
   </div>
   <div class="ticker" aria-hidden="true">
     <div class="ticker__track">
@@ -391,6 +400,21 @@
     <p>Выберите зону, время и место — подтверждение за пару касаний.</p>
     <a class="btn btn--hot btn--lg" href="#book">Забронировать сейчас<svg class="ic"><use href="#i-arrow"/></svg></a>
   </div>
+  <div class="wrap">
+    <div class="tgcard reveal">
+      <span class="tgcard__ic" aria-hidden="true"><svg class="ic"><use href="#i-telegram"/></svg></span>
+      <div class="tgcard__txt">
+        <h3>Бронируйте ещё быстрее в Telegram</h3>
+        <p>Бот и mini app показывают те же места и те же брони, что и сайт. Войдите на сайте через Telegram — ваши брони будут в обоих местах.</p>
+        <p class="muted-s" id="tgDemoNote" hidden>Это демо-страница: брони здесь хранятся только в вашем браузере и с настоящим ботом не синхронизируются.</p>
+      </div>
+      <a class="btn btn--ghost" data-tg-link href="https://t.me/cyberbounty_bot" target="_blank" rel="noopener">Открыть бота<svg class="ic"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="socials-row">
+      <span class="muted-s">Мы в соцсетях</span>
+      <div class="socials" data-socials></div>
+    </div>
+  </div>
 </section>
 </main>
 
@@ -403,6 +427,7 @@
         <span>CYBER<b>BOUNTY</b></span>
       </a>
       <p class="muted-s">Игровой клуб. Демо-проект: клуб, адрес, цены и отзывы вымышленные.</p><p class="muted-s" id="demoNote" hidden>Демо-версия: ваши брони хранятся только в этом браузере.</p>
+      <div class="socials" data-socials aria-label="Соцсети"></div>
     </div>
     <div class="foot__col"><h4>Разделы</h4><a href="#book">Бронь места</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#reviews">Отзывы</a></div>
     <div class="foot__col"><h4>Часы работы</h4><p>Каждый день<br>10:00 – 02:00</p><p class="muted-s">Последняя бронь заканчивается в 02:00</p></div>
@@ -423,16 +448,43 @@
 <!-- ============ ОКНА ============ -->
 <div class="modal" id="mLogin" hidden>
   <div class="modal__back" data-close></div>
-  <form class="modal__card" id="loginForm" novalidate role="dialog" aria-modal="true" aria-labelledby="loginT">
+  <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="loginT">
     <button class="modal__x" type="button" data-close aria-label="Закрыть"><svg class="ic"><use href="#i-x"/></svg></button>
-    <h3 id="loginT">Как вас записать?</h3>
-    <p class="muted-s" id="loginSub">Имя и телефон — чтобы найти вашу бронь. Пароль не нужен.</p>
-    <label class="field"><span>Имя</span><input name="name" type="text" autocomplete="name" maxlength="40" placeholder="Например, Андрей" required></label>
-    <label class="field"><span>Телефон</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+375 29 123-45-67" required></label>
-    <p class="field__err" id="loginErr" role="alert" hidden></p>
-    <button class="btn btn--hot btn--block" type="submit"><span class="btn__t">Продолжить</span><i class="spin" aria-hidden="true"></i></button>
-    <p class="muted-s center">Нажимая «Продолжить», вы соглашаетесь с <a href="privacy.html">политикой конфиденциальности</a>.</p>
-  </form>
+
+    <section class="lgn" id="lgMain">
+      <h3 id="loginT">Вход в CyberBounty</h3>
+      <p class="muted-s" id="loginSub">Любой способ ведёт в один аккаунт: брони с сайта и из Telegram будут вместе.</p>
+      <p class="lgn__demo" id="loginDemo" hidden>Демо-страница: вход имитируется одним нажатием. Настоящий вход работает на сервере.</p>
+      <div class="auth">
+        <div class="auth__row"><button class="auth__btn" type="button" data-p="telegram"><svg class="ic"><use href="#i-telegram"/></svg><span>Войти через Telegram</span></button><p class="auth__hint" hidden></p></div>
+        <div class="auth__row"><div class="auth__g" id="googleSlot" hidden></div><button class="auth__btn" type="button" data-p="google"><svg class="ic"><use href="#i-google"/></svg><span>Войти через Google</span></button><p class="auth__hint" hidden></p></div>
+        <div class="auth__row"><button class="auth__btn" type="button" data-p="email"><svg class="ic"><use href="#i-mail"/></svg><span>Войти по почте</span></button><p class="auth__hint" hidden></p></div>
+      </div>
+      <button class="link-btn lgn__alt" type="button" id="lgPhoneOpen">Или по имени и телефону</button>
+      <p class="field__err" id="loginErr" role="alert" hidden></p>
+      <p class="muted-s center">Входя, вы соглашаетесь с <a href="privacy.html">политикой конфиденциальности</a>.</p>
+    </section>
+
+    <form class="lgn" id="emailForm" novalidate hidden>
+      <button class="lgn__back" type="button" data-back aria-label="Назад"><svg class="ic"><use href="#i-back"/></svg>Назад</button>
+      <h3>Вход по почте</h3>
+      <p class="muted-s" id="emailSub">Пришлём на почту код из 6 цифр. Пароль не нужен.</p>
+      <label class="field"><span>Почта</span><input name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="you@example.com" required></label>
+      <label class="field" id="codeField" hidden><span>Код из письма</span><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"></label>
+      <p class="field__err" id="emailErr" role="alert" hidden></p>
+      <button class="btn btn--hot btn--block" type="submit"><span class="btn__t" id="emailBtnT">Получить код</span><i class="spin" aria-hidden="true"></i></button>
+    </form>
+
+    <form class="lgn" id="loginForm" novalidate hidden>
+      <button class="lgn__back" type="button" data-back aria-label="Назад"><svg class="ic"><use href="#i-back"/></svg>Назад</button>
+      <h3>Имя и телефон</h3>
+      <p class="muted-s">Запасной вход: чтобы найти вашу бронь. Пароль не нужен.</p>
+      <label class="field"><span>Имя</span><input name="name" type="text" autocomplete="name" maxlength="40" placeholder="Например, Андрей" required></label>
+      <label class="field"><span>Телефон</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+375 29 123-45-67" required></label>
+      <p class="field__err" id="phoneErr" role="alert" hidden></p>
+      <button class="btn btn--hot btn--block" type="submit"><span class="btn__t">Продолжить</span><i class="spin" aria-hidden="true"></i></button>
+    </form>
+  </div>
 </div>
 
 <div class="modal" id="mTicket" hidden>
@@ -441,6 +493,7 @@
     <div class="ok" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 14-16"/></svg></div>
     <h3 id="tkT">Место за вами</h3>
     <div class="ticket" id="ticket"></div>
+    <a class="tg-after" data-tg-link href="https://t.me/cyberbounty_bot" target="_blank" rel="noopener"><svg class="ic"><use href="#i-telegram"/></svg><span>Следующую бронь — в Telegram, ещё быстрее</span></a>
     <div class="modal__btns"><button class="btn btn--ghost" type="button" data-close>Ещё бронь</button><button class="btn btn--hot" type="button" id="tkMy">Мои брони</button></div>
   </div>
 </div>
@@ -450,13 +503,14 @@
   <section class="drawer__card" role="dialog" aria-modal="true" aria-labelledby="myT">
     <header class="drawer__head"><h3 id="myT">Мои брони</h3><button class="modal__x modal__x--in" type="button" data-close aria-label="Закрыть"><svg class="ic"><use href="#i-x"/></svg></button></header>
     <div class="drawer__body" id="myList"></div>
-    <footer class="drawer__foot"><span id="myWho" class="muted-s"></span><button class="link-btn" id="btnLogout" type="button">Выйти</button></footer>
+    <footer class="drawer__foot"><span id="myWho" class="muted-s"></span><span class="drawer__acts"><button class="link-btn" id="btnLink" type="button">Привязать вход</button><button class="link-btn" id="btnLogout" type="button">Выйти</button></span></footer>
   </section>
 </div>
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="demo.js?v=5"></script>
-<script src="app.js?v=5" defer></script>
+<script src="site-config.js?v=6"></script>
+<script src="demo.js?v=6"></script>
+<script src="app.js?v=6" defer></script>
 </body>
 </html>

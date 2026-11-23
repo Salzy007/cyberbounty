@@ -645,3 +645,55 @@ html, body { max-width: 100%; }
 html, body, body * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 input, textarea, [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
 img { -webkit-user-drag: none; user-drag: none; }
+
+/* ---------- вход тремя способами ---------- */
+.lgn { display: grid; gap: 14px; }
+.lgn[hidden] { display: none !important; }
+.lgn__demo { padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(255, 178, 30, .5); background: rgba(255, 178, 30, .08); color: #ffd98a; font-size: 14px; }
+.lgn__alt { justify-self: center; }
+.lgn__back { display: inline-flex; align-items: center; gap: 6px; justify-self: start; height: 36px; padding: 0 10px 0 4px; margin-left: -4px; color: var(--muted); font-weight: 600; border-radius: 10px; }
+.lgn__back:hover { color: #fff; }
+.lgn__back .ic { width: 18px; height: 18px; }
+.auth { display: grid; gap: 10px; }
+.auth__row { display: grid; gap: 6px; }
+.auth__btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; height: 52px; padding: 0 18px; border-radius: 14px; border: 1px solid var(--line2); background: rgba(20, 23, 52, .6); font-weight: 700; font-size: 16px; transition: transform .25s var(--ease), border-color .25s, opacity .25s; }
+.auth__btn:hover:not(:disabled) { border-color: var(--cyan); transform: translateY(-1px); }
+.auth__btn:active:not(:disabled) { transform: scale(.98); }
+.auth__btn .ic { width: 22px; height: 22px; color: var(--cyan); }
+.auth__btn[data-p="telegram"] .ic { color: #5fd0ff; }
+.auth__btn:disabled { opacity: .55; border-style: dashed; cursor: not-allowed; }
+.auth__btn:disabled .ic { color: var(--muted); }
+.auth__hint { color: var(--muted); font-size: 13px; text-align: center; }
+.auth__g { height: 52px; display: grid; place-items: center; overflow: hidden; border-radius: 14px; }
+.auth__g[hidden] { display: none; }
+.btn__t { display: inline-block; }
+
+/* соцсети */
+.socials { display: flex; flex-wrap: wrap; gap: 10px; }
+.social { position: relative; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: #cfd5f2; border: 1px solid var(--line2); background: rgba(20, 23, 52, .6); isolation: isolate; transition: transform .25s var(--ease), color .25s; }
+.social::after { content: ""; position: absolute; inset: -1px; z-index: -1; border-radius: inherit; opacity: 0; box-shadow: 0 0 0 1px var(--cyan), 0 0 22px -2px rgba(53, 230, 255, .7); transition: opacity .25s; }
+.social:hover { transform: translateY(-2px); color: #fff; }
+.social:hover::after, .social:focus-visible::after { opacity: 1; }
+.social .ic { width: 22px; height: 22px; }
+.socials-row { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 22px; min-height: 44px; }
+
+/* Telegram: пилюля в герое, карточка в призыве, строка после брони */
+.tg-pill { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 10px; height: 44px; margin-top: 14px; padding: 0 16px; border-radius: 22px; border: 1px solid rgba(95, 208, 255, .45); background: rgba(10, 30, 52, .55); color: #d9f3ff; font-weight: 600; font-size: 15px; transition: transform .25s var(--ease), border-color .25s; }
+.tg-pill:hover { transform: translateY(-1px); border-color: #5fd0ff; }
+.tg-pill .ic { color: #5fd0ff; }
+.tgcard { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 20px; margin-top: 22px; padding: 22px 26px; border-radius: 22px; border: 1px solid rgba(95, 208, 255, .35); background: linear-gradient(120deg, rgba(20, 60, 100, .35), rgba(13, 15, 32, .72)); }
+.tgcard__ic { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: rgba(95, 208, 255, .14); color: #5fd0ff; }
+.tgcard__ic .ic { width: 28px; height: 28px; }
+.tgcard h3 { font-size: 20px; font-weight: 800; }
+.tgcard p { color: #c5cbe8; margin-top: 4px; }
+.tgcard p.muted-s { color: var(--muted); }
+.tg-after { display: inline-flex; align-items: center; gap: 8px; color: #8fdcff; font-weight: 600; font-size: 14px; }
+.tg-after:hover { color: #fff; }
+.tg-after .ic { width: 18px; height: 18px; }
+.drawer__acts { display: inline-flex; gap: 16px; }
+@media (max-width: 760px) {
+  .tgcard { grid-template-columns: 48px minmax(0, 1fr); padding: 18px; gap: 14px 14px; }
+  .tgcard__ic { width: 48px; height: 48px; }
+  .tgcard .btn { grid-column: 1 / -1; }
+  .tg-pill { font-size: 14px; padding: 0 14px; max-width: 100%; }
+}

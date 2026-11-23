@@ -17,7 +17,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from app import booking
+import asyncio
+
+from app import accounts, auth_providers as providers, booking
 from app.booking import BookingError
 from app.config import BASE_DIR, Settings
 from app.db import connect, init_db
@@ -65,7 +67,8 @@ class Limiter:
 def create_app(settings: Settings) -> FastAPI:
     init_db(settings.db_path)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    login_limit, admin_limit = Limiter(10, 60), Limiter(5, 60)
+    login_limit, admin_limit, code_limit = Limiter(10, 60), Limiter(5, 60), Limiter(5, 600)
+    sig = {"v": None}          # отпечаток броней: так замечаем, что бот (другая программа) что-то записал в общую базу
 
     def db():
         return connect(settings.db_path)
@@ -89,7 +92,7 @@ def create_app(settings: Settings) -> FastAPI:
             return None
         conn = db()
         try:
-            return conn.execute("SELECT s.user_id, u.name, u.phone FROM sessions s LEFT JOIN users u ON u.id = s.user_id"
+            return conn.execute("SELECT s.user_id, u.* FROM sessions s LEFT JOIN users u ON u.id = s.user_id"
                                 " WHERE s.token_hash = ? AND s.kind = ? AND s.expires_ts > ?",
                                 (_hash(token), kind, int(time.time()))).fetchone()
         finally:
@@ -97,7 +100,7 @@ def create_app(settings: Settings) -> FastAPI:
 
     def current_user(request: Request) -> dict | None:
         row = session_row(request, "cb_session", "user")
-        return {"id": row["user_id"], "name": row["name"], "phone": row["phone"]} if row else None
+        return accounts.public(row) if row and row["name"] is not None else None
 
     def need_user(request: Request) -> dict:
         user = current_user(request)
@@ -196,12 +199,105 @@ def create_app(settings: Settings) -> FastAPI:
         finally:
             conn.close()
 
+    def sync_signature() -> None:
+        conn = db()
+        try:
+            now_sig = booking.signature(conn)
+        finally:
+            conn.close()
+        if sig["v"] is not None and sig["v"] != now_sig:
+            hub.publish(0)
+        sig["v"] = now_sig
+
     @app.get("/api/wait")
     async def wait(since: int | None = None):
-        version, changed = await hub.wait(0, since)
-        return {"version": version, "changed": changed}
+        if since is None:
+            return {"version": hub.version(0), "changed": False}
+        for _ in range(12):                      # ждём до ~24 с, раз в 2 с глядя, не записал ли бот что-то в общую базу
+            sync_signature()
+            version, changed = await hub.wait(0, since, timeout=2.0)
+            if changed:
+                return {"version": version, "changed": True}
+        return {"version": hub.version(0), "changed": False}
 
     # ---------- клиент ----------
+
+    def finish_login(conn, row, request: Request) -> JSONResponse:
+        token = start_session(conn, "user", row["id"], USER_TTL)
+        resp = JSONResponse({"me": accounts.public(row)})
+        set_cookie(resp, "cb_session", token, USER_TTL)
+        return resp
+
+    @app.get("/api/auth/providers")
+    async def auth_providers():
+        """Какие способы входа настроены. Не настроенные кнопка показывает неактивными."""
+        tg, g = bool(settings.telegram_bot_token and settings.telegram_bot_username), bool(settings.google_client_id)
+        return {"telegram": {"enabled": tg, "bot": settings.telegram_bot_username,
+                             "bot_id": int(settings.telegram_bot_token.split(":")[0]) if tg and settings.telegram_bot_token.split(":")[0].isdigit() else None},
+                "google": {"enabled": g, "client_id": settings.google_client_id if g else ""},
+                "email": {"enabled": True, "dev": not providers.smtp_ready(settings)}}
+
+    @app.post("/api/auth/telegram")
+    async def auth_telegram(request: Request):
+        login_limit.hit(client_ip(request))
+        data = await read_json(request)
+        tg = providers.verify_telegram(data, settings.telegram_bot_token)
+        cur = current_user(request)
+        conn = db()
+        try:
+            row = accounts.sign_in(conn, "telegram_id", tg["id"], tg["name"], current_id=cur["id"] if cur else None)
+            return finish_login(conn, row, request)
+        finally:
+            conn.close()
+
+    @app.post("/api/auth/google")
+    async def auth_google(request: Request):
+        login_limit.hit(client_ip(request))
+        data = await read_json(request)
+        info = await asyncio.to_thread(providers.verify_google, data.get("credential"), settings.google_client_id)
+        cur = current_user(request)
+        conn = db()
+        try:
+            row = accounts.sign_in(conn, "google_sub", info["sub"], info["name"] or (info["email"] or "").split("@")[0],
+                                   current_id=cur["id"] if cur else None, email=info["email"])
+            return finish_login(conn, row, request)
+        finally:
+            conn.close()
+
+    EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}\.[^@\s.]{2,}$")
+
+    def clean_email(raw) -> str:
+        email = raw.strip().lower() if isinstance(raw, str) else ""
+        if len(email) > 254 or not EMAIL_RE.match(email):
+            raise BookingError("bad_email", "Введите настоящий адрес почты.")
+        return email
+
+    @app.post("/api/auth/email/request")
+    async def auth_email_request(request: Request):
+        login_limit.hit(client_ip(request))
+        email = clean_email((await read_json(request)).get("email"))
+        conn = db()
+        try:
+            code = providers.issue_code(conn, email)
+        finally:
+            conn.close()
+        await asyncio.to_thread(providers.send_code, settings, email, code)
+        return {"ok": True, "dev": not providers.smtp_ready(settings)}
+
+    @app.post("/api/auth/email/verify")
+    async def auth_email_verify(request: Request):
+        code_limit.hit(client_ip(request))
+        data = await read_json(request)
+        email = clean_email(data.get("email"))
+        cur = current_user(request)
+        conn = db()
+        try:
+            providers.check_code(conn, email, data.get("code"))
+            row = accounts.sign_in(conn, "email", email, data.get("name") or email.split("@")[0],
+                                   current_id=cur["id"] if cur else None)
+            return finish_login(conn, row, request)
+        finally:
+            conn.close()
 
     @app.post("/api/login")
     async def login(request: Request):
@@ -212,17 +308,13 @@ def create_app(settings: Settings) -> FastAPI:
         try:
             row = conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
             if row:
-                uid = row["id"]
-                conn.execute("UPDATE users SET name = ? WHERE id = ?", (name, uid))
+                conn.execute("UPDATE users SET name = ? WHERE id = ?", (name, row["id"]))
+                user = accounts.get(conn, row["id"])
             else:
-                uid = conn.execute("INSERT INTO users (name, phone, created_ts) VALUES (?, ?, ?)",
-                                   (name, phone, int(time.time()))).lastrowid
-            token = start_session(conn, "user", uid, USER_TTL)
+                user = accounts.sign_in(conn, "phone", phone, name)
+            return finish_login(conn, user, request)
         finally:
             conn.close()
-        resp = JSONResponse({"me": {"id": uid, "name": name, "phone": phone}})
-        set_cookie(resp, "cb_session", token, USER_TTL)
-        return resp
 
     @app.post("/api/logout")
     async def logout(request: Request):

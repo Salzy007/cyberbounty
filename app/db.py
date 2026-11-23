@@ -19,11 +19,22 @@ CREATE TABLE IF NOT EXISTS places (
     number   INTEGER NOT NULL,
     UNIQUE (zone_id, number)
 );
-CREATE TABLE IF NOT EXISTS users (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT NOT NULL,
-    phone       TEXT NOT NULL UNIQUE,                  -- только цифры, 7-15 штук
-    created_ts  INTEGER NOT NULL
+CREATE TABLE IF NOT EXISTS users (                    -- один человек = одна строка; способы входа — колонки
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    phone        TEXT UNIQUE,                          -- только цифры, 7-15 штук
+    telegram_id  INTEGER UNIQUE,                       -- вход через Telegram и mini app в боте
+    email        TEXT UNIQUE,                          -- маленькими буквами
+    google_sub   TEXT UNIQUE,                          -- неизменный id аккаунта Google
+    created_ts   INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS email_codes (               -- одноразовые коды входа по почте (хранится только хэш)
+    email       TEXT PRIMARY KEY,
+    code_hash   TEXT NOT NULL,
+    expires_ts  INTEGER NOT NULL,
+    attempts    INTEGER NOT NULL DEFAULT 0,
+    created_ts  INTEGER NOT NULL,
+    sent_log    TEXT NOT NULL DEFAULT ''               -- метки времени отправок за последний час (для лимита)
 );
 CREATE TABLE IF NOT EXISTS sessions (
     token_hash  TEXT PRIMARY KEY,                      -- sha256 от cookie; сам токен в базе не хранится
@@ -72,10 +83,28 @@ def connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+def _migrate_users(conn: sqlite3.Connection) -> None:
+    """Старая таблица users (телефон обязателен, без telegram_id/email/google_sub) -> новая, с сохранением id."""
+    cols = {r["name"]: r for r in conn.execute("PRAGMA table_info(users)")}
+    if "telegram_id" in cols and not cols["phone"]["notnull"]:
+        return
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.execute("BEGIN IMMEDIATE")
+    conn.execute("ALTER TABLE users RENAME TO users_old")
+    conn.execute("""CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT UNIQUE,
+        telegram_id INTEGER UNIQUE, email TEXT UNIQUE, google_sub TEXT UNIQUE, created_ts INTEGER NOT NULL)""")
+    conn.execute("INSERT INTO users (id, name, phone, created_ts) SELECT id, name, phone, created_ts FROM users_old")
+    conn.execute("DROP TABLE users_old")
+    conn.execute("COMMIT")
+    conn.execute("PRAGMA foreign_keys = ON")
+
+
 def init_db(db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = connect(db_path)
     try:
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'users'").fetchone():
+            _migrate_users(conn)
         conn.executescript(SCHEMA)
         if conn.execute("SELECT COUNT(*) FROM zones").fetchone()[0] == 0:
             for sort, (zid, name, tagline, price, word, count) in enumerate(SEED_ZONES):

@@ -199,11 +199,12 @@ def booking_view(row) -> dict:
         "start": row["start_ts"], "end": row["end_ts"],
         "hours": row["hours"], "price": row["price"], "status": row["status"],
         "client": row["client_name"], "phone": row["client_phone"], "user_id": row["user_id"],
+        "telegram_id": row["telegram_id"],           # есть, если человек связан с Telegram (уведомления бота)
     }
 
 
-_SELECT = ("SELECT b.*, z.name AS zone_name, z.place_word, p.number FROM bookings b"
-           " JOIN places p ON p.id = b.place_id JOIN zones z ON z.id = p.zone_id")
+_SELECT = ("SELECT b.*, z.name AS zone_name, z.place_word, p.number, u.telegram_id AS telegram_id FROM bookings b"
+           " JOIN places p ON p.id = b.place_id JOIN zones z ON z.id = p.zone_id LEFT JOIN users u ON u.id = b.user_id")
 
 
 def get_booking(conn, booking_id: int) -> dict:
@@ -232,7 +233,7 @@ def create_booking(conn: sqlite3.Connection, user: dict, place_id, start_ts, hou
     if not any(window(place, d)[0] <= start_ts and end_ts <= window(place, d)[1] for d in sessions)             or start_ts >= midnight(first) + (DAYS_AHEAD + 1) * 86400:
         raise BookingError("closed", "Клуб в это время закрыт, или бронь выходит за время закрытия.")
 
-    name = (user.get("name") or "").strip()[:60] or f"id {user['id']}"
+    name = (user.get("name") or user.get("first_name") or "").strip()[:60] or f"id {user['id']}"
 
     conn.execute("BEGIN IMMEDIATE")          # дальше никто другой не запишет, пока мы не закончим
     try:
@@ -290,6 +291,31 @@ def delete_booking(conn, booking_id: int) -> None:
     if b["status"] != "canceled":
         raise BookingError("active", "Стереть можно только отменённую бронь. Подтверждённые остаются в истории.", 409)
     conn.execute("DELETE FROM bookings WHERE id = ? AND status = 'canceled'", (booking_id,))
+
+
+def delete_by_client(conn, booking_id: int, user_id: int) -> dict:
+    """Клиент стирает свою ОТМЕНЁННУЮ бронь."""
+    b = get_booking(conn, booking_id)
+    if b["user_id"] != user_id:
+        raise BookingError("no_booking", "Такой брони нет.", 404)
+    if b["status"] != "canceled":
+        raise BookingError("active", "Стереть можно только отменённую бронь.", 409)
+    conn.execute("DELETE FROM bookings WHERE id = ? AND status = 'canceled'", (booking_id,))
+    return b
+
+
+def clear_mine(conn, user_id: int) -> int:
+    """Клиент стирает все свои отменённые брони."""
+    return conn.execute("DELETE FROM bookings WHERE status = 'canceled' AND user_id = ?", (user_id,)).rowcount
+
+
+def canceled_owners(conn) -> list[int]:
+    return [r[0] for r in conn.execute("SELECT DISTINCT user_id FROM bookings WHERE status = 'canceled'")]
+
+
+def signature(conn) -> tuple:
+    """Отпечаток всех броней: меняется, когда кто-то (в том числе другая программа — бот) создал или отменил бронь."""
+    return tuple(conn.execute("SELECT COUNT(*), COALESCE(MAX(id), 0), COALESCE(SUM(canceled_ts), 0) FROM bookings").fetchone())
 
 
 def clear_history(conn) -> int:
