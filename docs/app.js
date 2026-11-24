@@ -129,7 +129,7 @@ function renderTimes() {
   });
   if (rebuilt) {
     const sel = $('.time[aria-selected="true"]', box);
-    box.scrollLeft = sel ? Math.max(0, sel.offsetLeft - box.clientWidth / 2 + sel.offsetWidth / 2) : 0;
+    box.scrollTo({ left: sel ? Math.max(0, sel.offsetLeft - box.clientWidth / 2 + sel.offsetWidth / 2) : 0, behavior: "smooth" });
   }
 }
 
@@ -444,6 +444,13 @@ function updateBadge() {
   const el = $("#myBadge");
   el.textContent = n; el.hidden = !n;
 }
+/* карточка плавно сворачивается и исчезает, соседние не прыгают */
+function collapseOut(el) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return Promise.resolve();
+  const h = el.offsetHeight; el.style.overflow = "hidden";
+  return el.animate([{ height: h + "px", opacity: 1 }, { height: "0px", opacity: 0, paddingTop: 0, paddingBottom: 0, marginBottom: "-12px", borderWidth: 0 }],
+    { duration: 300, easing: "cubic-bezier(.22, 1, .36, 1)", fill: "forwards" }).finished.catch(() => {});
+}
 function bookingCard(b, up) {
   const st = b.status === "canceled" ? '<span class="pill pill--off">Отменена</span>' : up ? '<span class="pill pill--ok">Подтверждена</span>' : '<span class="pill pill--done">Прошла</span>';
   const canCancel = up && b.start * 1000 > Date.now();
@@ -468,7 +475,7 @@ function openMy() { closeMenu(); renderMy(); openModal($("#dMy")); loadMy(); }
 
 $("#myList").addEventListener("click", async (e) => {
   const go = e.target.closest("[data-go]");
-  if (go) { setTimeout(() => $("#book").scrollIntoView(), 50); return; }
+  if (go) { setTimeout(() => $("#book").scrollIntoView(), 340); return; }
   const btn = e.target.closest("[data-act]");
   if (!btn) return;
   const card = btn.closest(".bk"), act = card && card.querySelector(".bk__act");
@@ -479,6 +486,8 @@ $("#myList").addEventListener("click", async (e) => {
       if (btn.dataset.act === "hide") await api(`/bookings/${card.dataset.id}`, { method: "DELETE" });
       else await api("/my-bookings/clear", { method: "POST" });
       toast("Убрано из вашего списка");
+      const gone = btn.dataset.act === "hide" ? [card] : [...$$("#myList .bk")].filter((c) => $(".pill--off", c)).concat([...$$("#myList .sub-row")]);
+      await Promise.all(gone.map(collapseOut));
       await loadMy();
     } catch (ex) { toast(ex.message, true); await loadMy(); }
     return;
@@ -638,6 +647,23 @@ function setupPage() {
   }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
   $$(".reveal").forEach((el) => io.observe(el));
 
+  /* FAQ: ответ раскрывается и сворачивается плавно (у <details> по умолчанию высота меняется рывком) */
+  $$(".faq__item").forEach((d) => {
+    const sum = $("summary", d); let anim = null;
+    sum.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) { d.open = !d.open; return; }
+      if (anim) anim.cancel();
+      const from = d.offsetHeight, opening = !d.open;
+      let to;
+      if (opening) { d.open = true; to = d.offsetHeight; }
+      else { d.classList.add("is-closing"); d.open = false; to = d.offsetHeight; d.open = true; }
+      d.style.overflow = "hidden";
+      anim = d.animate({ height: [from + "px", to + "px"] }, { duration: 320, easing: "cubic-bezier(.22, 1, .36, 1)" });
+      anim.onfinish = anim.oncancel = () => { anim = null; d.style.overflow = ""; d.classList.remove("is-closing"); d.open = opening; };
+    });
+  });
+
   const top = $("#top");
   const onScroll = () => top.classList.toggle("stuck", scrollY > 12);
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
@@ -648,7 +674,7 @@ function setupPage() {
   }), { rootMargin: "-45% 0px -50% 0px" });
   ["hero", "book", "about", "services", "reviews", "faq"].forEach((id) => so.observe($("#" + id)));
   /* «Главное» всегда ведёт в самый верх страницы, а не к якорю под шапкой */
-  $$("[data-home]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: 0, left: 0, behavior: "instant" }); }));
+  $$("[data-home]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: 0, left: 0, behavior: "smooth" }); }));
 
   new IntersectionObserver((es) => { bookVisible = es[0].isIntersecting; dock(); }, { rootMargin: "0px 0px -10% 0px" }).observe($("#book"));
 
