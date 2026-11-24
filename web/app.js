@@ -1003,27 +1003,55 @@ init();
   const apply = (on) => { if (on) root.setAttribute("data-theme", "violet"); else root.removeAttribute("data-theme"); btn.setAttribute("aria-pressed", String(on)); if (meta) meta.content = on ? "#07040f" : "#06070d"; };
   apply(root.dataset.theme === "violet");
   let busy = false;
+  /* Смена темы: View Transitions (снимок старого вида, новый «проявляется» поверх), без них — мгновенно с кольцом.
+     Пять вариантов, ?fx=1..5 для сравнения: 1 круг из кнопки, 2 луч сверху вниз, 3 диагональная волна, 4 ударная волна + «вдох», 5 глитч. */
+  const FX = Math.min(5, Math.max(1, +new URLSearchParams(location.search).get("fx") || 1));
+  const EASE = "cubic-bezier(.22,1,.36,1)";
+  const fxEl = (css) => { const d = document.createElement("div"); d.className = "fx-el"; d.style.cssText = css; document.body.append(d); return d; };
   const flip = (e) => {
     if (busy) return;
     const on = root.dataset.theme !== "violet";
     const save = () => { try { localStorage.setItem("cb_theme", on ? "violet" : "default"); } catch (err) {} };
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { apply(on); save(); return; }
-    busy = true;
-    // плавная смена: тёмная вуаль с «вспышкой» цвета новой темы проявляется, под ней меняются цвета, затем вуаль плавно гаснет (только opacity)
-    const [c1, c2] = on ? ["181,123,255", "255,79,216"] : ["255,178,30", "53,230,255"];
+    const swap = () => { apply(on); save(); };
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || !document.startViewTransition) { swap(); return; }
+    const [c1, c2] = on ? ["#b57bff", "#ff4fd8"] : ["#ffb21e", "#35e6ff"];
     const r = e && e.currentTarget && e.currentTarget.getBoundingClientRect ? e.currentTarget.getBoundingClientRect() : null;
-    const x = r && r.width ? Math.round(r.left + r.width / 2) : Math.round(innerWidth / 2), y = r && r.height ? Math.round(r.top + r.height / 2) : 0;
-    const veil = document.createElement("div");
-    veil.className = "theme-veil";
-    veil.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(${c1},.5), rgba(${c2},.22) 38%, rgba(6,7,13,.94) 100%)`;
-    document.body.append(veil);
-    void veil.offsetWidth;
-    veil.classList.add("on");
-    setTimeout(() => {
-      apply(on); save();
-      veil.classList.remove("on");
-      setTimeout(() => { veil.remove(); busy = false; }, 650);
-    }, 330);
+    const x = r && r.width ? r.left + r.width / 2 : innerWidth / 2, y = r && r.height ? r.top + r.height / 2 : 0;
+    const W = innerWidth, H = innerHeight, R = Math.hypot(Math.max(x, W - x), Math.max(y, H - y));
+    busy = true;
+    const vt = document.startViewTransition(swap);
+    const glow = `0 0 24px ${c1}, 0 0 60px ${c2}`;
+    vt.ready.then(() => {
+      const nw = (kf, ms) => root.animate(kf, { duration: ms, easing: EASE, pseudoElement: "::view-transition-new(root)", fill: "both" });
+      const els = [];
+      if (FX === 1) {                       // круг расходится из кнопки, на кромке неоновое кольцо
+        nw({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${R}px at ${x}px ${y}px)`] }, 900);
+        const d = 240, ring = fxEl(`left:${x - d / 2}px;top:${y - d / 2}px;width:${d}px;height:${d}px;border-radius:50%;border:3px solid ${c1};box-shadow:${glow},inset ${glow};`);
+        ring.animate({ transform: ["scale(0)", `scale(${2 * R / d})`], opacity: [1, 1, .0] }, { duration: 900, easing: EASE, fill: "both" }); els.push(ring);
+      } else if (FX === 2) {                // луч сверху вниз, за ним новая тема
+        nw({ clipPath: ["inset(0 0 100% 0)", "inset(0 0 0% 0)"] }, 800);
+        const b = fxEl(`left:0;top:-3px;width:100%;height:3px;background:${c1};box-shadow:${glow};`);
+        b.animate({ transform: ["translateY(0)", `translateY(${H + 3}px)`], opacity: [1, 1, 0] }, { duration: 800, easing: EASE, fill: "both" }); els.push(b);
+      } else if (FX === 3) {                // косая волна слева направо
+        const sk = H * .35, tot = W + sk;
+        nw({ clipPath: [`polygon(0 0, 0 0, -${sk}px 100%, -${sk}px 100%)`, `polygon(0 0, ${tot}px 0, ${W}px 100%, -${sk}px 100%)`].map((v, i) => i ? v : `polygon(0px 0, 0px 0, ${-sk}px 100%, ${-sk}px 100%)`) }, 850);
+        const b = fxEl(`left:0;top:-10vh;width:4px;height:120vh;background:${c1};box-shadow:${glow};transform-origin:50% 50%;`);
+        const ang = Math.atan(sk / H) * 180 / Math.PI;
+        b.animate({ transform: [`translateX(0px) rotate(${ang}deg)`, `translateX(${tot}px) rotate(${ang}deg)`], opacity: [1, 1, 0] }, { duration: 850, easing: EASE, fill: "both" }); els.push(b);
+      } else if (FX === 4) {                // ударная волна и «вдох» страницы
+        nw({ opacity: [0, 1], transform: ["scale(1.04)", "scale(1)"] }, 700);
+        for (let i = 0; i < 2; i++) {
+          const d = 200, ring = fxEl(`left:${x - d / 2}px;top:${y - d / 2}px;width:${d}px;height:${d}px;border-radius:50%;border:2px solid ${i ? c2 : c1};box-shadow:${glow};`);
+          ring.animate({ transform: ["scale(0)", `scale(${2 * R / d})`], opacity: [.9, 0] }, { duration: 800, delay: i * 120, easing: "cubic-bezier(.2,.7,.3,1)", fill: "both" }); els.push(ring);
+        }
+      } else {                              // глитч: быстрое мерцание между старым и новым видом
+        root.animate({ opacity: [0, 1, 0, 1, 0, 1, 1], transform: ["translateX(-8px)", "translateX(6px)", "translateX(-4px)", "translateX(5px)", "translateX(-2px)", "translateX(0)", "translateX(0)"] },
+          { duration: 520, easing: "steps(7, end)", pseudoElement: "::view-transition-new(root)", fill: "both" });
+      }
+      setTimeout(() => els.forEach((n) => n.remove()), 1100);
+    });
+    vt.finished.finally(() => { busy = false; });
   };
   btn.addEventListener("click", flip);
   $("#menuTheme").addEventListener("click", flip);

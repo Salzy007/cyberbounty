@@ -830,6 +830,6 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
   .chip-btn .badge { position: absolute; top: -6px; right: -6px; }
 }
 
-.theme-veil { position: fixed; inset: 0; z-index: 250; pointer-events: none; opacity: 0; transition: opacity .33s ease; }
-.theme-veil.on { opacity: 1; }
-.theme-veil:not(.on) { transition-duration: .6s; }
+.fx-el { position: fixed; z-index: 300; pointer-events: none; will-change: transform, opacity; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-group(root) { animation: none; }
