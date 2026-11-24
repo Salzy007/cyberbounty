@@ -485,8 +485,10 @@ html.intro-end .intro__core { display: none; }
 .intro__half--t { top: 0; border-bottom: 2px solid var(--cyan); box-shadow: 0 6px 30px -4px rgba(var(--cyan-rgb), .8); background: radial-gradient(60% 120% at 50% 100%, rgba(120, 70, 255, .28), transparent), #05040f; }
 .intro__half--b { bottom: 0; border-top: 2px solid var(--cyan); box-shadow: 0 -6px 30px -4px rgba(var(--cyan-rgb), .8); background: radial-gradient(60% 120% at 50% 0%, rgba(40, 190, 255, .22), transparent), #05040f; }
 .intro__core { position: relative; z-index: 2; display: grid; justify-items: center; gap: 18px; padding: 0 24px; max-width: 100%; box-sizing: border-box; transition: opacity .4s, transform .5s var(--ease); }
-.intro__logo { width: 92px; height: 92px; overflow: visible; filter: drop-shadow(0 0 14px rgba(var(--amber-rgb), .75)); animation: iLogo 1s var(--ease) both; }
-.intro__logo .ring { animation-duration: 4s; }
+.intro__logo { position: relative; width: 92px; height: 92px; animation: iLogo 1s var(--ease) both; }
+.intro__logo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 14px rgba(var(--amber-rgb), .75)); }
+/* кольцо крутится как отдельный слой (transform элемента), а не внутри SVG: на телефонах (WebKit) так оно не замирает */
+.intro__ring { will-change: transform; animation: rot 4s linear infinite; }
 @keyframes iLogo { from { opacity: 0; transform: scale(.55) rotate(-90deg); } }
 .intro__word { display: flex; gap: .06em; font-weight: 800; font-size: clamp(30px, 8vw, 52px); letter-spacing: .16em; animation: iWord .9s .25s var(--ease) both; max-width: 100%; }
 .intro__word b { color: var(--amber); text-shadow: 0 0 26px rgba(var(--amber-rgb), .7); font-weight: 800; }
@@ -820,3 +822,7 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
   .chip-btn { padding: 0; width: 44px; height: 44px; justify-content: center; }
   .chip-btn .badge { position: absolute; top: -6px; right: -6px; }
 }
+
+.theme-veil { position: fixed; inset: 0; z-index: 250; pointer-events: none; opacity: 0; transition: opacity .33s ease; }
+.theme-veil.on { opacity: 1; }
+.theme-veil:not(.on) { transition-duration: .6s; }

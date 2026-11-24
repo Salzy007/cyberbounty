@@ -1002,10 +1002,28 @@ init();
   const btn = $("#btnTheme"), root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
   const apply = (on) => { if (on) root.setAttribute("data-theme", "violet"); else root.removeAttribute("data-theme"); btn.setAttribute("aria-pressed", String(on)); if (meta) meta.content = on ? "#07040f" : "#06070d"; };
   apply(root.dataset.theme === "violet");
-  const flip = () => {
+  let busy = false;
+  const flip = (e) => {
+    if (busy) return;
     const on = root.dataset.theme !== "violet";
-    apply(on);
-    try { localStorage.setItem("cb_theme", on ? "violet" : "default"); } catch (e) {}
+    const save = () => { try { localStorage.setItem("cb_theme", on ? "violet" : "default"); } catch (err) {} };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { apply(on); save(); return; }
+    busy = true;
+    // плавная смена: тёмная вуаль с «вспышкой» цвета новой темы проявляется, под ней меняются цвета, затем вуаль плавно гаснет (только opacity)
+    const [c1, c2] = on ? ["181,123,255", "255,79,216"] : ["255,178,30", "53,230,255"];
+    const r = e && e.currentTarget && e.currentTarget.getBoundingClientRect ? e.currentTarget.getBoundingClientRect() : null;
+    const x = r && r.width ? Math.round(r.left + r.width / 2) : Math.round(innerWidth / 2), y = r && r.height ? Math.round(r.top + r.height / 2) : 0;
+    const veil = document.createElement("div");
+    veil.className = "theme-veil";
+    veil.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(${c1},.5), rgba(${c2},.22) 38%, rgba(6,7,13,.94) 100%)`;
+    document.body.append(veil);
+    void veil.offsetWidth;
+    veil.classList.add("on");
+    setTimeout(() => {
+      apply(on); save();
+      veil.classList.remove("on");
+      setTimeout(() => { veil.remove(); busy = false; }, 650);
+    }, 330);
   };
   btn.addEventListener("click", flip);
   $("#menuTheme").addEventListener("click", flip);
