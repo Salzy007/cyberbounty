@@ -429,15 +429,18 @@ function bookingCard(b, up) {
     <div class="bk__row"><b>${esc(b.zone)} · ${esc(seatLabel(b))}</b>${st}</div>
     <div class="bk__row"><span class="bk__when">${esc(dateLong(b.start))}, ${esc(b.start_time)}–${esc(b.end_time)}</span><span class="bk__code">${esc(b.code)}</span></div>
     <div class="bk__row"><span class="muted-s">${b.hours} ч</span><b class="price">${b.price} BYN</b></div>
-    ${canCancel ? '<div class="bk__act"><button class="mini" data-act="ask" type="button">Отменить</button></div>' : up ? "" : '<div class="bk__act"><button class="mini" data-act="del" type="button">Удалить</button></div>'}
+    ${canCancel ? '<div class="bk__act"><button class="mini" data-act="ask" type="button">Отменить</button></div>' : ""}
   </article>`;
 }
 function renderMy() {
   const up = S.my.filter(upcoming).sort((a, b) => a.start - b.start);
-  const old = S.my.filter((b) => !upcoming(b));
+  const past = S.my.filter((b) => !upcoming(b) && b.status !== "canceled");
+  const off = S.my.filter((b) => b.status === "canceled");
+  const hidden = localStorage.getItem("cb-hide-off") !== "0";      // отменённые по умолчанию свёрнуты
   $("#myList").innerHTML = S.my.length
     ? (up.length ? `<p class="sub-h">Ближайшие</p>${up.map((b) => bookingCard(b, true)).join("")}` : "")
-      + (old.length ? `<p class="sub-h">История</p>${old.some((b) => b.status === "canceled") ? '<div class="bk__act"><button class="mini" data-act="clear" type="button">Очистить отменённые</button></div>' : ""}${old.map((b) => bookingCard(b, false)).join("")}` : "")
+      + (past.length ? `<p class="sub-h">История</p>${past.map((b) => bookingCard(b, false)).join("")}` : "")
+      + (off.length ? `<div class="bk__act"><button class="mini" data-act="toggleoff" type="button">Отменённые (${off.length}): ${hidden ? "показать" : "скрыть"}</button></div>${hidden ? "" : off.map((b) => bookingCard(b, false)).join("")}` : "")
     : `<div class="empty"><svg class="ic"><use href="#i-ticket"/></svg><p>Пока нет броней.<br>Выберите место — это быстро.</p><button class="btn btn--hot" type="button" data-close data-go="book">Выбрать место</button></div>`;
 }
 function openMy() { closeMenu(); renderMy(); openModal($("#dMy")); loadMy(); }
@@ -448,14 +451,9 @@ $("#myList").addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-act]");
   if (!btn) return;
   const card = btn.closest(".bk"), act = card && card.querySelector(".bk__act");
-  if (btn.dataset.act === "clear" || btn.dataset.act === "del") {
-    btn.disabled = true;
-    try {
-      if (btn.dataset.act === "clear") await api("/my-bookings/clear", { method: "POST" });
-      else await api(`/bookings/${card.dataset.id}`, { method: "DELETE" });
-      toast("Удалено");
-      await loadMy();
-    } catch (ex) { toast(ex.message, true); await loadMy(); }
+  if (btn.dataset.act === "toggleoff") {
+    localStorage.setItem("cb-hide-off", localStorage.getItem("cb-hide-off") === "0" ? "1" : "0");
+    renderMy();
     return;
   }
   if (btn.dataset.act === "ask") {
