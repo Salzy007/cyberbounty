@@ -38,7 +38,9 @@ function toast(text, err = false) {
   const el = document.createElement("div");
   el.className = "toast" + (err ? " toast--err" : "");
   el.textContent = text;
-  $("#toasts").append(el);
+  const box = $("#toasts");
+  while (box.children.length >= 3) box.firstElementChild.remove();
+  box.append(el);
   setTimeout(() => el.remove(), 4100);
 }
 
@@ -58,6 +60,7 @@ function unlockPage() {
   scrollTo({ top: lockY, left: 0, behavior: "instant" });
 }
 function openModal(el) {
+  if (!el.hidden && !el.classList.contains("closing")) return;        // уже открыто: повторное касание ничего не делает
   lastFocus = document.activeElement;
   clearTimeout(el._closeTimer);
   el.classList.remove("closing");
@@ -218,7 +221,7 @@ function paintMap() {
 function swapZone(id) {
   if (id === S.zone.id) return;
   S.zone = S.cfg.zones.find((z) => z.id === id);
-  S.placeId = null; S.key = null;
+  S.placeId = null; S.key = null; ++S.reqId;                 // ответы по прежней зоне больше не принимаются
   renderZones();
   const map = $(".map");
   if (map) map.classList.add("swap");
@@ -227,10 +230,12 @@ function swapZone(id) {
 
 /* ---------- итог и подтверждение ---------- */
 function updateSummary() {
-  const z = S.zone, has = S.placeId && S.start;
+  const z = S.zone, pl = z.places.find((p) => p.id === S.placeId);
+  if (S.placeId && !pl) { S.placeId = null; S.key = null; }          // место осталось от другой зоны (быстрое переключение): сбрасываем
+  const has = !!(pl && S.start);
   const price = z.price * S.hours;
   $("#sZone").textContent = z.name;
-  $("#sSeat").textContent = has ? seatName(z, z.places.find((p) => p.id === S.placeId).number) : "не выбрано";
+  $("#sSeat").textContent = has ? seatName(z, pl.number) : "не выбрано";
   $("#sDate").textContent = S.start ? dateLong(S.start) : "—";
   $("#sTime").textContent = S.start ? `${tm(S.start)}–${tm(S.start + S.hours * 3600)} · ${S.hours} ч` : "—";
   $("#sPrice").textContent = S.start ? `${price} BYN` : "—";
@@ -240,7 +245,7 @@ function updateSummary() {
     btn.disabled = !has || S.confirming;
     $(".btn__t", btn).textContent = btn.id === "dockConfirm" ? "Подтвердить" : label;
   }
-  $("#dSeat").textContent = has ? `${seatName(z, z.places.find((p) => p.id === S.placeId).number)} · ${z.name}` : "";
+  $("#dSeat").textContent = has ? `${seatName(z, pl.number)} · ${z.name}` : "";
   $("#dWhen").textContent = has ? `${tm(S.start)}–${tm(S.start + S.hours * 3600)} · ${price} BYN` : "";
   dock();
 }
@@ -371,16 +376,18 @@ async function finishAuth(call, errBox = $("#loginErr")) {
   } catch (ex) { errBox.textContent = ex.message; errBox.hidden = false; }
 }
 
+let loginGen = 0;
 $("#lgMain").addEventListener("click", async (e) => {
   const btn = e.target.closest(".auth__btn"); if (!btn || btn.disabled) return;
   const p = btn.dataset.p;
   if (CB_DEMO) { finishAuth(() => api("/auth/demo", { method: "POST", body: { provider: p } })); return; }
   if (p === "telegram") {
     const err = $("#loginErr"); err.hidden = true;
-    let st; try { st = await api("/auth/telegram/start", { method: "POST" }); } catch (ex) { err.textContent = ex.message; err.hidden = false; return; }
-    const lbl = $("span", btn), old = lbl.textContent; btn.disabled = true; lbl.textContent = "Ждём подтверждения в Telegram…";
+    const lbl = $("span", btn), old = lbl.textContent, gen = ++loginGen; btn.disabled = true;      // сразу блокируем: быстрый двойной тап не откроет две вкладки
+    let st; try { st = await api("/auth/telegram/start", { method: "POST" }); } catch (ex) { btn.disabled = false; err.textContent = ex.message; err.hidden = false; return; }
+    lbl.textContent = "Ждём подтверждения в Telegram…";
     window.open(st.url, "_blank", "noopener");
-    for (let i = 0; i < 150 && !$("#mLogin").hidden; i++) {       // до 5 минут, раз в 2 секунды
+    for (let i = 0; i < 150 && !$("#mLogin").hidden && gen === loginGen; i++) {       // до 5 минут, раз в 2 секунды; старый опрос уступает новому
       await new Promise((r) => setTimeout(r, 2000));
       try {
         const r = await api("/auth/telegram/poll", { method: "POST", body: { token: st.token } });
@@ -473,6 +480,7 @@ function renderMy() {
 }
 function openMy() { closeMenu(); renderMy(); openModal($("#dMy")); loadMy(); }
 
+let myActing = false;
 $("#myList").addEventListener("click", async (e) => {
   const go = e.target.closest("[data-go]");
   if (go) { setTimeout(() => $("#book").scrollIntoView(), 340); return; }
@@ -481,7 +489,8 @@ $("#myList").addEventListener("click", async (e) => {
   const card = btn.closest(".bk"), act = card && card.querySelector(".bk__act");
   /* «Убрать» и «Очистить» прячут брони только из списка клиента: у клуба (админка, бот) они остаются */
   if (btn.dataset.act === "hide" || btn.dataset.act === "clearoff") {
-    btn.disabled = true;
+    if (myActing) return;
+    myActing = true; btn.disabled = true;
     try {
       if (btn.dataset.act === "hide") await api(`/bookings/${card.dataset.id}`, { method: "DELETE" });
       else await api("/my-bookings/clear", { method: "POST" });
@@ -490,6 +499,7 @@ $("#myList").addEventListener("click", async (e) => {
       await Promise.all(gone.map(collapseOut));
       await loadMy();
     } catch (ex) { toast(ex.message, true); await loadMy(); }
+    finally { myActing = false; }
     return;
   }
   if (btn.dataset.act === "ask") {
@@ -538,6 +548,7 @@ $("#room").addEventListener("click", (e) => {
   const b = e.target.closest(".seat");
   if (!b || b.disabled) return;
   const id = +b.dataset.place;
+  if (S.mapZone !== S.zone.id || !S.zone.places.some((p) => p.id === id)) return;       // схема ещё от прежней зоны
   S.placeId = S.placeId === id ? null : id; S.key = null;
   $("#sErr").hidden = true;
   paintMap();
@@ -647,22 +658,11 @@ function setupPage() {
   }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
   $$(".reveal").forEach((el) => io.observe(el));
 
-  /* FAQ: ответ раскрывается и сворачивается плавно (у <details> по умолчанию высота меняется рывком) */
-  $$(".faq__item").forEach((d) => {
-    const sum = $("summary", d); let anim = null;
-    sum.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) { d.open = !d.open; return; }
-      if (anim) anim.cancel();
-      const from = d.offsetHeight, opening = !d.open;
-      let to;
-      if (opening) { d.open = true; to = d.offsetHeight; }
-      else { d.classList.add("is-closing"); d.open = false; to = d.offsetHeight; d.open = true; }
-      d.style.overflow = "hidden";
-      anim = d.animate({ height: [from + "px", to + "px"] }, { duration: 320, easing: "cubic-bezier(.22, 1, .36, 1)" });
-      anim.onfinish = anim.oncancel = () => { anim = null; d.style.overflow = ""; d.classList.remove("is-closing"); d.open = opening; };
-    });
-  });
+  /* FAQ: состояние только в классе .open, анимацию ведёт CSS (быстрые касания не ломают её) */
+  $$(".faq__q").forEach((q) => q.addEventListener("click", () => {
+    const item = q.closest(".faq__item"), open = !item.classList.contains("open");
+    item.classList.toggle("open", open); q.setAttribute("aria-expanded", String(open));
+  }));
 
   const top = $("#top");
   const onScroll = () => top.classList.toggle("stuck", scrollY > 12);
