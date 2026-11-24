@@ -1,5 +1,5 @@
 /* Эффекты сайта: глитч заголовков, наклон карточек, параллакс героя, «Как это работает» по прокрутке,
-   искры на местах, молния при брони, прицел за курсором и искра от касания. Только transform и opacity. */
+   искры на местах, молния при брони, искра от касания. Только transform и opacity. */
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -9,14 +9,15 @@
   const layer = (style) => { const d = document.createElement("div"); d.className = "fx-el fx-top"; d.style.cssText = style; document.body.append(d); return d; };
   const EASE = "cubic-bezier(.2,.7,.3,1)";
 
-  /* ---- 1. глитч заголовков: при первом появлении ---- */
+  /* ---- 1. глитч заголовков: каждый раз при появлении ---- */
   const heads = $$(".sec__head h2, .sec--cta h2");
   heads.forEach((h) => h.setAttribute("data-t", h.textContent));
   if (!reduce) {
     const io = new IntersectionObserver((es) => es.forEach((en) => {
       if (!en.isIntersecting) return;
-      en.target.classList.add("gl-go"); io.unobserve(en.target);
-      setTimeout(() => en.target.classList.remove("gl-go"), 900);
+      const t = en.target;                                   // каждый раз, когда заголовок появляется на экране
+      t.classList.remove("gl-go"); void t.offsetWidth; t.classList.add("gl-go");
+      clearTimeout(t._gl); t._gl = setTimeout(() => t.classList.remove("gl-go"), 700);
     }), { threshold: 0.7 });
     heads.forEach((h) => io.observe(h));
   }
@@ -131,31 +132,4 @@
     addEventListener("scroll", () => { if (!t) { t = true; requestAnimationFrame(upd); } }, { passive: true });
   }
 
-  /* ---- 7. прицел за курсором (компьютер) ---- */
-  if (fine && !reduce) {
-    const mk = (cls) => { const d = document.createElement("div"); d.className = "fx-cur " + cls; document.body.append(d); return d; };
-    const ring = mk("fx-cur__ring"), dot = mk("fx-cur__dot");
-    const trail = Array.from({ length: 5 }, (_, i) => { const d = mk("fx-cur__tr"); d.style.opacity = String(.38 - i * .07); return d; });
-    let mx = -99, my = -99, rx = -99, ry = -99, raf = 0, shown = false;
-    const pos = trail.map(() => [-99, -99]);
-    const frame = () => {
-      rx += (mx - rx) * .22; ry += (my - ry) * .22;
-      ring.style.transform = `translate3d(${rx.toFixed(1)}px, ${ry.toFixed(1)}px, 0) translate(-50%, -50%)`;
-      dot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`;
-      let px = rx, py = ry;
-      trail.forEach((d, i) => { pos[i][0] += (px - pos[i][0]) * .32; pos[i][1] += (py - pos[i][1]) * .32; d.style.transform = `translate3d(${pos[i][0].toFixed(1)}px, ${pos[i][1].toFixed(1)}px, 0) translate(-50%, -50%)`; px = pos[i][0]; py = pos[i][1]; });
-      raf = (Math.abs(mx - rx) + Math.abs(my - ry) > .4) ? requestAnimationFrame(frame) : 0;
-    };
-    addEventListener("pointermove", (e) => {
-      if (e.pointerType !== "mouse") return;
-      mx = e.clientX; my = e.clientY;
-      if (!shown) { shown = true; rx = mx; ry = my; pos.forEach((p) => { p[0] = mx; p[1] = my; }); document.documentElement.classList.add("fx-cur-on"); }
-      const hot = e.target.closest && e.target.closest("a, button, .tile, .gcard, .seat, .zone, .day, .time, .dur, .faq__q, input");
-      ring.classList.toggle("hot", !!hot);
-      if (!raf) raf = requestAnimationFrame(frame);
-    }, { passive: true });
-    document.addEventListener("pointerleave", () => document.documentElement.classList.remove("fx-cur-on"));
-    document.addEventListener("pointerenter", () => { if (shown) document.documentElement.classList.add("fx-cur-on"); });
-    addEventListener("pointerdown", (e) => { if (e.pointerType === "mouse") { ring.classList.remove("click"); void ring.offsetWidth; ring.classList.add("click"); } }, { passive: true });
-  }
 })();

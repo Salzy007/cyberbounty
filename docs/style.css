@@ -25,7 +25,8 @@ svg[stroke="#ffb21e"] { stroke: var(--amber); }
 .theme-btn .ic { transition: transform .4s var(--ease); }
 html[data-theme="violet"] .theme-btn { color: var(--amber); border-color: rgba(var(--amber-rgb), .5); }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; scroll-padding-top: calc(var(--head) + 12px); scrollbar-gutter: stable; background: var(--ink); }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--head) + 12px); scrollbar-gutter: auto; scrollbar-width: none; background: var(--ink); }
+html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; display: none; }   /* полосы прокрутки нет: её роль у неоновой линии справа */
 body { margin: 0; color: var(--text); background: transparent; font: 500 16px/1.55 var(--font); overflow-x: clip; text-size-adjust: 100%; }
 html.lock { overflow: hidden; }       /* страница стоит на месте, пока открыто окно (см. lockPage в app.js) */
 [hidden] { display: none !important; }
@@ -144,7 +145,7 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 .card { background: linear-gradient(180deg, rgba(20, 23, 52, .82), rgba(13, 15, 32, .82)); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; }
 
 /* reveal: выезжает один раз, ничего не двигает вокруг */
-.reveal { opacity: 0; transform: translate3d(0, 22px, 0); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.reveal { opacity: 0; transform: translate3d(0, 14px, 0); transition: opacity .28s ease, transform .32s var(--ease); }
 .reveal.in { opacity: 1; transform: none; }
 
 /* ---------- бронь ---------- */
@@ -653,7 +654,7 @@ body { overscroll-behavior-x: none; }
   .eyebrow { background: rgba(8, 24, 40, .85); }
   .ticker { background: rgba(6, 7, 13, .92); }
   /* появление блоков при прокрутке: короче и легче, чтобы макет не «плыл» */
-  .reveal { transform: translate3d(0, 10px, 0); transition: opacity .5s ease, transform .5s var(--ease); }
+  .reveal { transform: translate3d(0, 8px, 0); transition: opacity .25s ease, transform .3s var(--ease); }
   .reveal.in { transform: none; }
   .tile img, .photo img { transition: none; }
   .tile:hover img { transform: none; }
@@ -782,8 +783,8 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 .gcard { display: grid; grid-template-rows: auto 64px; text-align: left; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: var(--panel); transition: transform .35s var(--ease), border-color .3s, opacity .8s var(--ease); min-width: 0; }
 @media (hover: hover) and (pointer: fine) { .gcard:hover { transform: translate3d(0, -4px, 0); border-color: rgba(var(--cyan-rgb), .5); } }
 .gcard:active { transform: scale(.98); }
-.gcard.reveal { transition: opacity .8s var(--ease), transform .8s var(--ease), border-color .3s; }
-.gcard.reveal.in { transition: transform .35s var(--ease), border-color .3s, opacity .8s var(--ease); }
+.gcard.reveal { transition: opacity .28s ease, transform .32s var(--ease), border-color .3s; }
+.gcard.reveal.in { transition: transform .35s var(--ease), border-color .3s, opacity .28s ease; }
 .gart { display: block; position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #0a0c1d; }
 .gart img { width: 100%; height: 100%; object-fit: cover; }
 .gart--big { aspect-ratio: 16 / 10; border-radius: 24px 24px 0 0; }
@@ -839,7 +840,7 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 ::view-transition-new(fxbolt), ::view-transition-new(fxflash) { animation: none; mix-blend-mode: normal; }
 
 /* «разряд» при прокрутке (только transform и opacity) */
-.zap { position: fixed; right: 8px; top: 0; bottom: 0; width: 5px; border-radius: 3px; z-index: 45; pointer-events: none; opacity: 0; transition: opacity .4s ease; }
+.zap { position: fixed; right: 6px; top: 0; bottom: 0; width: 5px; border-radius: 3px; z-index: 45; pointer-events: none; opacity: 0; transition: opacity .4s ease; }
 .zap.on { opacity: 1; }
 html.intro-on:not(.intro-end) .zap, html.lock .zap { opacity: 0; }
 .zap::before { content: ""; position: absolute; inset: 0; background: rgba(var(--cyan-rgb), .22); border-radius: 3px; }
@@ -875,14 +876,4 @@ html.intro-on:not(.intro-end) .zap, html.lock .zap { opacity: 0; }
 /* «Как это работает» по прокрутке (большой экран): секция приколота, шаги листаются колесом */
 .sec--how.pin { height: var(--pin-h, auto); padding-bottom: 0; }
 .sec--how.pin > .wrap { position: sticky; top: var(--head); min-height: calc(100svh - var(--head)); display: flex; flex-direction: column; justify-content: center; padding-bottom: 24px; }
-/* прицел за курсором */
-.fx-cur { position: fixed; left: 0; top: 0; z-index: 500; pointer-events: none; will-change: transform; transition: opacity .25s; }
-html:not(.fx-cur-on) .fx-cur { visibility: hidden; opacity: 0; }
-.fx-cur__ring { width: 34px; height: 34px; }
-.fx-cur__ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--cyan); box-shadow: 0 0 12px rgba(var(--cyan-rgb), .55); transition: transform .3s var(--ease), border-color .2s; }
-.fx-cur__ring.hot::before { transform: scale(1.5) rotate(45deg); border-color: var(--amber); border-style: dashed; box-shadow: 0 0 14px rgba(var(--amber-rgb), .6); }
-.fx-cur__ring.click::before { animation: curClick .45s ease-out; }
-@keyframes curClick { 0% { transform: scale(.7); } 100% { transform: scale(1); } }
-.fx-cur__dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px var(--cyan); }
-.fx-cur__tr { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
 @media (prefers-reduced-motion: reduce) { .gl-go, .gl-go::before, .gl-go::after, .stats b.pop { animation: none; } }
