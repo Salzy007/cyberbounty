@@ -170,7 +170,8 @@ function renderDurs() {
     box.innerHTML = S.cfg.durations.map((h) => `<button class="dur" role="radio" type="button" data-h="${h}">${h}<small> ч</small></button>`).join("");
   }
   $$(".dur", box).forEach((b) => {
-    const h = +b.dataset.h, off = !(slot && ok(slot, h)), on = S.hoursSet && h === S.hours;
+    const h = +b.dataset.h, on = S.hoursSet && h === S.hours;
+    const off = slot ? !ok(slot, h) : !(S.slotsDay === S.day && S.slots.some((s) => ok(s, h)));
     if (b.disabled !== off) b.disabled = off;
     if (b.getAttribute("aria-checked") !== String(on)) b.setAttribute("aria-checked", String(on));
   });
@@ -253,11 +254,12 @@ function paintMap() {
 function swapZone(id) {
   if (id === S.zone.id) return;
   S.zone = S.cfg.zones.find((z) => z.id === id);
-  S.placeId = null; S.key = null; ++S.reqId;                 // ответы по прежней зоне больше не принимаются
-  renderZones();
-  const map = $(".map");
-  if (map) map.classList.add("swap");
-  setTimeout(() => { S.mapZone = null; loadSlots(); }, map ? 180 : 0);
+  /* новая зона — бронь начинается заново: дата, время, длительность и место сбрасываются, шаги плавно сворачиваются */
+  S.day = null; S.start = null; S.hoursSet = false; S.placeId = null; S.key = null; S.slots = []; S.slotsDay = null; S.busy = {};
+  ++S.reqId;                                                 // ответы по прежней зоне больше не принимаются
+  renderZones(); renderDays(); renderDurs();
+  updateSummary();                                           // сворачивает шаги и обновляет итог сразу
+  setTimeout(() => { if (S.zone.id === id) { S.mapZone = null; loadSlots(); } }, 460);   // схему новой зоны строим, когда шаг уже свернулся
 }
 
 /* ---------- итог и подтверждение ---------- */

@@ -197,7 +197,9 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 .map--tournament .ic { width: 22px; height: 22px; max-width: none; }
 @media (hover: hover) and (pointer: fine) { .seat:hover:not([disabled]):not([aria-pressed="true"]) { transform: translateY(-3px); box-shadow: 0 8px 26px -6px rgba(53, 230, 255, .75); background: rgba(53, 230, 255, .16); } }
 .seat:active:not([disabled]) { transform: scale(.95); }
-.seat[aria-pressed="true"] { border-color: var(--amber); color: #1a1100; background: linear-gradient(160deg, #ffd263, var(--amber)); box-shadow: 0 0 0 3px rgba(255, 178, 30, .25), 0 0 34px rgba(255, 178, 30, .75); transform: translateY(-2px) scale(1.04); }
+.seat[aria-pressed="true"] { border-color: var(--amber); color: #1a1100; background: linear-gradient(160deg, #ffd263, var(--amber)); transform: translateY(-2px) scale(1.04); }
+.seat::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 0 3px rgba(255, 178, 30, .25), 0 0 34px rgba(255, 178, 30, .75); opacity: 0; transition: opacity .3s ease; }
+.seat[aria-pressed="true"]::after { opacity: 1; }
 .seat[aria-pressed="true"] b, .seat[aria-pressed="true"] small { color: #1a1100; }
 .seat[disabled] { cursor: not-allowed; color: #4f5680; border-color: #2a2f57; border-style: dashed; background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .03) 0 6px, transparent 6px 12px); }
 .seat[disabled] b { color: #6d759f; }
