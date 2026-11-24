@@ -183,19 +183,27 @@
       label.style.transform = `translate3d(0, ${(tickY[k] - 14).toFixed(1)}px, 0)`;       // подпись стоит ровно напротив своей засечки
       label.classList.add("on");
     };
-    // ползунок: тянуть лампочку или кликнуть по линии; рядом с меткой мышью - плавный переход к разделу
+    const nearTick = (y) => tickY.findIndex((ty) => Math.abs(ty - y) <= 10);
+    // ползунок: тянуть лампочку или нажать на засечку (плавный переход к разделу)
     const scrollToY = (clientY) => {
       const p = Math.min(1, Math.max(0, (clientY - 9) / (H - 18)));
       scrollTo({ top: p * maxScroll(), left: 0, behavior: "instant" });
     };
     hit.addEventListener("pointerdown", (e) => {
       e.preventDefault();
-      const k = tickY.findIndex((y) => Math.abs(y - e.clientY) <= 9);
-      if (k >= 0 && e.pointerType === "mouse") { marked[k].scrollIntoView({ behavior: "smooth", block: "start" }); showLabel(e.clientY); return; }
-      drag = true; zap.classList.add("drag"); try { hit.setPointerCapture(e.pointerId); } catch (err) {}
-      scrollToY(e.clientY); req();
+      // нажимать можно только на засечку (плавный переход к разделу) или на саму лампочку (тянуть); пустое место линии не реагирует
+      const lampY = yOf(maxScroll() > 0 ? Math.min(1, Math.max(0, scrollY / maxScroll())) : 0);
+      if (Math.abs(e.clientY - lampY) <= 12) { drag = true; zap.classList.add("drag"); try { hit.setPointerCapture(e.pointerId); } catch (err) {} req(); return; }   // лампочка важнее засечки под ней
+      const k = nearTick(e.clientY);
+      if (k >= 0) { marked[k].scrollIntoView({ behavior: "smooth", block: "start" }); showLabel(e.clientY, true); }
     });
-    hit.addEventListener("pointermove", (e) => { if (drag) { scrollToY(e.clientY); req(); } else if (e.pointerType === "mouse") showLabel(e.clientY, false); });
+    hit.addEventListener("pointermove", (e) => {
+      if (drag) { scrollToY(e.clientY); req(); return; }
+      if (e.pointerType !== "mouse") return;
+      const lampY = yOf(maxScroll() > 0 ? Math.min(1, Math.max(0, scrollY / maxScroll())) : 0);
+      hit.style.cursor = nearTick(e.clientY) >= 0 || Math.abs(e.clientY - lampY) <= 16 ? "pointer" : "default";
+      showLabel(e.clientY, false);
+    });
     const end = () => { drag = false; zap.classList.remove("drag"); setTimeout(() => { if (!drag) label.classList.remove("on"); }, 500); };
     hit.addEventListener("pointerup", end); hit.addEventListener("pointercancel", end);
     hit.addEventListener("pointerleave", () => { if (!drag) label.classList.remove("on"); });
