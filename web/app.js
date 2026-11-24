@@ -42,18 +42,40 @@ function toast(text, err = false) {
   setTimeout(() => el.remove(), 4100);
 }
 
-let lastFocus = null;
+let lastFocus = null, lockY = 0;
+/* Блокировка прокрутки страницы под окном. overflow:hidden у body не работает, когда у html тоже задан overflow (в Safari, Google, Telegram
+   страница продолжала листаться), поэтому body фиксируется на месте, а положение прокрутки запоминается и возвращается после закрытия. */
+function lockPage() {
+  if (document.body.classList.contains("lock")) return;
+  lockY = scrollY;
+  document.body.style.top = -lockY + "px";
+  document.body.classList.add("lock");
+}
+function unlockPage() {
+  if (!document.body.classList.contains("lock")) return;
+  document.body.classList.remove("lock");
+  document.body.style.top = "";
+  scrollTo({ top: lockY, left: 0, behavior: "instant" });
+}
 function openModal(el) {
   lastFocus = document.activeElement;
+  clearTimeout(el._closeTimer);
+  el.classList.remove("closing");
   el.hidden = false;
-  document.body.classList.add("lock");
+  lockPage();
   const f = $("input, button.btn", el);
   if (f && matchMedia("(hover:hover)").matches) setTimeout(() => f.focus({ preventScroll: true }), 60);
 }
+/* закрытие плавное: сначала играет анимация ухода, и только потом окно скрывается */
 function closeModal(el) {
-  el.hidden = true;
-  if (!$$(".modal:not([hidden]), .drawer:not([hidden])").length) document.body.classList.remove("lock");
-  if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  if (el.hidden || el.classList.contains("closing")) return;
+  el.classList.add("closing");
+  el._closeTimer = setTimeout(() => {
+    el.classList.remove("closing");
+    el.hidden = true;
+    if (!$$(".modal:not([hidden]), .drawer:not([hidden])").length) unlockPage();
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  }, 280);
 }
 document.addEventListener("click", (e) => {
   const c = e.target.closest("[data-close]");
@@ -522,8 +544,18 @@ $("#tkMy").addEventListener("click", () => { closeModal($("#mTicket")); openMy()
 $$("[data-pick]").forEach((a) => a.addEventListener("click", () => swapZone(a.dataset.pick)));
 
 const menu = $("#menu"), burger = $("#burger");
-function closeMenu() { menu.hidden = true; burger.setAttribute("aria-expanded", "false"); }
-burger.addEventListener("click", () => { menu.hidden = !menu.hidden; burger.setAttribute("aria-expanded", String(!menu.hidden)); });
+let menuTimer = 0;
+function closeMenu() {
+  burger.setAttribute("aria-expanded", "false");
+  if (menu.hidden || menu.classList.contains("closing")) return;
+  menu.classList.add("closing");                                                // плавно уходит, потом скрывается
+  menuTimer = setTimeout(() => { menu.classList.remove("closing"); menu.hidden = true; }, 220);
+}
+burger.addEventListener("click", () => {
+  if (menu.hidden || menu.classList.contains("closing")) {
+    clearTimeout(menuTimer); menu.classList.remove("closing"); menu.hidden = false; burger.setAttribute("aria-expanded", "true");
+  } else closeMenu();
+});
 menu.addEventListener("click", (e) => { if (e.target.closest("a")) closeMenu(); });
 
 /* ---------- мгновенные обновления и «сейчас свободно» ---------- */
