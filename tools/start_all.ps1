@@ -6,8 +6,8 @@ $ngrok = "C:\Users\tsar7\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Mic
 $domain = "surfboard-register-glimmer.ngrok-free.dev"
 
 function Test-Port($p) { [bool](Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue) }
-function Start-Hidden($exe, $args, $dir, $log) {
-    Start-Process -FilePath $exe -ArgumentList $args -WorkingDirectory $dir -WindowStyle Hidden `
+function Start-Hidden($exe, $argList, $dir, $log) {
+    Start-Process -FilePath $exe -ArgumentList $argList -WorkingDirectory $dir -WindowStyle Hidden `
         -RedirectStandardOutput "$log.out.log" -RedirectStandardError "$log.err.log"
 }
 
