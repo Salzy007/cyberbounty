@@ -230,6 +230,10 @@
     });
   }
 
+  /* В демо весь браузер принадлежит одному посетителю, а разные способы входа создают разные аккаунты. Чтобы брони прежнего входа
+     не оставались «призраками» (место занято, а в «Моих бронях» их нет), после входа все брони браузера переходят вошедшему. */
+  function adoptAll(uid) { db.bookings.forEach(function (b) { if (b.user_id !== uid) b.user_id = uid; }); }
+
   /* ---------- маршруты (те же адреса, что у настоящего сервера) ---------- */
   function route(method, path, query, body) {
     var now = Date.now() / 1000, m;
@@ -245,6 +249,7 @@
       var name = cleanName(body.name), phone = cleanPhone(body.phone);
       var u = db.users.filter(function (x) { return x.phone === phone; })[0];
       if (u) u.name = name; else { u = { id: db.nextUser++, name: name, phone: phone, created_ts: Math.floor(now) }; db.users.push(u); }
+      adoptAll(u.id);
       db.session = { uid: u.id, exp: now + USER_TTL }; save();
       return { me: pub(u) };
     }
@@ -256,6 +261,7 @@
       du = du || db.users.filter(function (x) { return x[prov]; })[0];
       if (!du) { du = { id: db.nextUser++, name: DEMO_NAMES[prov], phone: null, created_ts: Math.floor(now) }; db.users.push(du); }
       du[prov] = true;
+      adoptAll(du.id);
       db.session = { uid: du.id, exp: now + USER_TTL }; save();
       return { me: pub(du) };
     }
