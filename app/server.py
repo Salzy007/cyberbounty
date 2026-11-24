@@ -8,6 +8,7 @@
 """
 import hashlib
 import hmac
+import json
 import re
 import secrets
 import time
@@ -112,6 +113,19 @@ def create_app(settings: Settings) -> FastAPI:
     def need_admin(request: Request) -> None:
         if not session_row(request, "cb_admin", "admin"):
             raise HTTPException(403, "Админка только для владельца.")
+
+    def notify(kind: str, **payload) -> None:
+        """Событие для бота (Telegram): сайт и бот — разные программы с общей базой, бот забирает события из notify_outbox."""
+        conn = db()
+        try:
+            conn.execute("INSERT INTO notify_outbox (kind, payload, created_ts) VALUES (?, ?, ?)",
+                         (kind, json.dumps(payload, ensure_ascii=False), int(time.time())))
+        finally:
+            conn.close()
+
+    def telegram_id_of(conn, user_id: int):
+        row = conn.execute("SELECT telegram_id FROM users WHERE id = ?", (user_id,)).fetchone()
+        return row["telegram_id"] if row else None
 
     def drop_session(request: Request, cookie: str) -> None:
         token = request.cookies.get(cookie)
@@ -363,6 +377,7 @@ def create_app(settings: Settings) -> FastAPI:
             conn.close()
         if is_new:
             hub.publish(0, user["id"])
+            notify("booked", booking=created)
         return {"booking": created, "duplicate": not is_new}
 
     @app.get("/api/my-bookings")
@@ -383,6 +398,7 @@ def create_app(settings: Settings) -> FastAPI:
         finally:
             conn.close()
         hub.publish(0, user["id"])
+        notify("canceled_by_client", booking=canceled)
         return {"booking": canceled}
 
     @app.delete("/api/bookings/{booking_id}")
@@ -390,10 +406,12 @@ def create_app(settings: Settings) -> FastAPI:
         user = need_user(request)
         conn = db()
         try:
-            booking.delete_by_client(conn, booking_id, user["id"])
+            gone = booking.delete_by_client(conn, booking_id, user["id"])
         finally:
             conn.close()
         hub.publish(0, user["id"])
+        if gone.get("telegram_id"):
+            notify("shredded", chat_id=gone["telegram_id"], n=1, code=gone["code"])
         return {"ok": True}
 
     @app.post("/api/my-bookings/clear")
@@ -401,10 +419,13 @@ def create_app(settings: Settings) -> FastAPI:
         user = need_user(request)
         conn = db()
         try:
+            tg = telegram_id_of(conn, user["id"])
             removed = booking.clear_mine(conn, user["id"])
         finally:
             conn.close()
         hub.publish(0, user["id"])
+        if removed and tg:
+            notify("shredded", chat_id=tg, n=removed)
         return {"removed": removed}
 
     # ---------- владелец ----------
@@ -456,6 +477,8 @@ def create_app(settings: Settings) -> FastAPI:
         finally:
             conn.close()
         hub.publish(0, canceled["user_id"])
+        if canceled.get("telegram_id"):                      # бронь без Telegram: сообщать некуда
+            notify("canceled", booking=canceled)
         return {"booking": canceled}
 
     @app.delete("/api/admin/bookings/{booking_id}")
@@ -463,10 +486,13 @@ def create_app(settings: Settings) -> FastAPI:
         need_admin(request)
         conn = db()
         try:
+            gone = booking.get_booking(conn, booking_id)
             booking.delete_booking(conn, booking_id)
         finally:
             conn.close()
         hub.publish(0)
+        if gone.get("telegram_id"):
+            notify("shredded", chat_id=gone["telegram_id"], n=1, code=gone["code"])
         return {"ok": True}
 
     @app.post("/api/admin/clear")
@@ -475,10 +501,14 @@ def create_app(settings: Settings) -> FastAPI:
         need_admin(request)
         conn = db()
         try:
+            owners = booking.canceled_owners(conn)
+            tg_owners = [t for t in (telegram_id_of(conn, u) for u in set(owners)) if t]
             removed = booking.clear_history(conn)
         finally:
             conn.close()
         hub.publish(0)
+        for tg in tg_owners:
+            notify("shredded", chat_id=tg, n=0)
         return {"removed": removed}
 
     @app.patch("/api/admin/zones/{zone_id}")

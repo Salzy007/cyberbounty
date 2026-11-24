@@ -76,6 +76,12 @@ CREATE TABLE IF NOT EXISTS bookings (
 CREATE UNIQUE INDEX IF NOT EXISTS ux_bookings_key ON bookings (user_id, idem_key) WHERE idem_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS ix_bookings_place ON bookings (place_id, status, start_ts);
 CREATE INDEX IF NOT EXISTS ix_bookings_user ON bookings (user_id, start_ts);
+CREATE TABLE IF NOT EXISTS notify_outbox (            -- события сайта для бота: бот шлёт уведомления в Telegram
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind       TEXT NOT NULL,
+    payload    TEXT NOT NULL,
+    created_ts INTEGER NOT NULL
+);
 """
 
 # Зоны, цены и описания вымышленные (демо)
