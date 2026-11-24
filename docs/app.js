@@ -1027,6 +1027,7 @@ init();
   };
   const flip = (e) => {
     if (busy) return;
+    document.querySelectorAll(".fx-el").forEach((n) => n.remove());      // остатки прошлой смены: два слоя с одним именем ломают анимацию
     const on = root.dataset.theme !== "violet";
     const save = () => { try { localStorage.setItem("cb_theme", on ? "violet" : "default"); } catch (err) {} };
     const swap = () => { apply(on); save(); };
@@ -1100,6 +1101,7 @@ init();
       });
       vt.finished.finally(() => { busy = false; });
     }, 110);
+    setTimeout(() => { svg.remove(); flash.remove(); }, 900);                        // слои с именами убираем сразу после их анимации
     setTimeout(() => extra.forEach((n) => n.remove()), 1500);
   };
   btn.addEventListener("click", flip);
