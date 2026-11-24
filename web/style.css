@@ -815,7 +815,14 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 
 #btnTheme span { display: none; }
 #btnTheme { padding: 0; width: 44px; height: 44px; justify-content: center; }
-@media (max-width: 560px) { #btnTheme { display: none; } }
+@media (max-width: 360px) { #btnTheme { display: none; } }
+@media (max-width: 480px) {
+  .top__in { gap: 8px; }
+  .top__tools { gap: 6px; }
+  .logo { font-size: 18px; letter-spacing: .1em; gap: 8px; }
+  .logo svg { width: 26px; height: 26px; }
+  .chip-btn, .burger { width: 42px; height: 42px; }
+}
 /* средние экраны: кнопки шапки — значками, чтобы всё помещалось в одну строку */
 @media (min-width: 1101px) and (max-width: 1320px) {
   .top__tools > .chip-btn span { display: none; }
