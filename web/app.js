@@ -60,6 +60,7 @@ function openModal(el) {
   clearTimeout(el._closeTimer);
   el.classList.remove("closing");
   el.hidden = false;
+  el._armAt = performance.now() + 400;                                 // пока окно «всплывает», клики по нему гасятся (см. ниже)
   lockPage();
   const f = $("input, button.btn", el);
   if (f && matchMedia("(hover:hover)").matches) setTimeout(() => f.focus({ preventScroll: true }), 60);
@@ -75,6 +76,12 @@ function closeModal(el) {
     if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }, 280);
 }
+/* Двойное касание кнопки, открывающей окно: второе касание не должно попасть в только что появившееся окно (ссылка, крестик, фон).
+   Ловим в фазе захвата и гасим, пока не прошло 0,4 с после открытия. */
+document.addEventListener("click", (e) => {
+  const m = e.target.closest && e.target.closest(".modal, .drawer");
+  if (m && m._armAt && performance.now() < m._armAt) { e.preventDefault(); e.stopPropagation(); }
+}, true);
 document.addEventListener("click", (e) => {
   const c = e.target.closest("[data-close]");
   if (c) closeModal(c.closest(".modal, .drawer"));
