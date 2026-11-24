@@ -10,7 +10,7 @@
   const EASE = "cubic-bezier(.2,.7,.3,1)";
 
   /* ---- 1. глитч заголовков: один раз при первом появлении ---- */
-  const heads = $$(".sec__head h2, .sec--cta h2");
+  const heads = $$(".sec__head h2, .sec--cta h2, #about h2");
   heads.forEach((h) => h.setAttribute("data-t", h.textContent));
   if (!reduce) {
     const io = new IntersectionObserver((es) => es.forEach((en) => {

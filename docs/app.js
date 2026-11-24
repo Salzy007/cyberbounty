@@ -706,7 +706,7 @@ function setupPage() {
   const so = new IntersectionObserver((es) => es.forEach((en) => {
     if (en.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + en.target.id));
   }), { rootMargin: "-45% 0px -50% 0px" });
-  ["hero", "book", "about", "services", "reviews", "faq"].forEach((id) => so.observe($("#" + id)));
+  ["hero", "book", "about", "services", "games", "reviews", "faq"].forEach((id) => so.observe($("#" + id)));
   /* «Главное» всегда ведёт в самый верх страницы, а не к якорю под шапкой */
   $$("[data-home]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: 0, left: 0, behavior: "smooth" }); }));
 

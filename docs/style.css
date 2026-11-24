@@ -857,10 +857,10 @@ html.intro-on:not(.intro-end) .zap, html.lock .zap { opacity: 0; }
 /* ---------- эффекты (effects.js): только transform и opacity ---------- */
 .fx-top { z-index: 400; }
 /* глитч заголовков при первом появлении */
-:is(.sec__head h2, .sec--cta h2)[data-t] { position: relative; }
-:is(.sec__head h2, .sec--cta h2)[data-t]::before, :is(.sec__head h2, .sec--cta h2)[data-t]::after { content: attr(data-t); position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; opacity: 0; }
-:is(.sec__head h2, .sec--cta h2)[data-t]::before { color: var(--cyan); }
-:is(.sec__head h2, .sec--cta h2)[data-t]::after { color: var(--pink); }
+:is(.sec__head h2, .sec--cta h2, #about h2)[data-t] { position: relative; }
+:is(.sec__head h2, .sec--cta h2, #about h2)[data-t]::before, :is(.sec__head h2, .sec--cta h2, #about h2)[data-t]::after { content: attr(data-t); position: absolute; left: 0; top: 0; width: 100%; pointer-events: none; opacity: 0; }
+:is(.sec__head h2, .sec--cta h2, #about h2)[data-t]::before { color: var(--cyan); }
+:is(.sec__head h2, .sec--cta h2, #about h2)[data-t]::after { color: var(--pink); }
 .gl-go { animation: glJit .6s steps(8, end); }
 .gl-go::before { animation: glA .6s steps(8, end); }
 .gl-go::after { animation: glB .6s steps(8, end); }
