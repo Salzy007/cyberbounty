@@ -309,6 +309,7 @@ async function confirmBooking() {
     const r = await api("/bookings", { method: "POST", body: { place_id: S.placeId, start: S.start, hours: S.hours, key: S.key } });
     S.key = null; S.placeId = null;
     showTicket(r.booking);
+    if (window.fxBookingZap) window.fxBookingZap();
     await Promise.all([loadSlots(), loadMy()]);
   } catch (e) {
     if (e.status === 401) { S.me = null; renderAuth(); S.pending = true; openLogin(); }
@@ -676,7 +677,7 @@ function countUp(el) {
   const step = (t) => {
     const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 4);
     el.textContent = Math.round(to * e);
-    if (k < 1) requestAnimationFrame(step);
+    if (k < 1) requestAnimationFrame(step); else { el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }   // в конце счёта цифра «щёлкает»
   };
   requestAnimationFrame(step);
 }
@@ -891,7 +892,7 @@ function setupHow() {
   const caps = $$(".cap", root), screens = $$(".mk", root), bars = $$(".how-bar", root), play = $("#howPlay"), snd = $("#howSnd");
   const K = parseFloat(getComputedStyle(root).getPropertyValue("--k")) || 1;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let i = -1, playing = !reduce, inView = false, running = false, stepStart = 0, elapsed = 0, timers = [];
+  let scrollMode = false, i = -1, playing = !reduce, inView = false, running = false, stepStart = 0, elapsed = 0, timers = [];
   if (reduce) root.classList.add("static");
 
   const clearCues = () => { timers.forEach(clearTimeout); timers = []; };
@@ -926,7 +927,8 @@ function setupHow() {
     if (running) schedule(0); else clearCues();
   }
   bars.forEach((b, k) => b.addEventListener("click", () => go(k)));
-  root.addEventListener("animationend", (e) => { if (e.animationName === "barFill" && running) go(i + 1); });
+  root.addEventListener("howscroll", (e) => { scrollMode = true; if (e.detail !== i) go(e.detail); });   // шаги по прокрутке (effects.js)
+  root.addEventListener("animationend", (e) => { if (e.animationName === "barFill" && running && !scrollMode) go(i + 1); });
   play.addEventListener("click", () => { playing = !playing; sync(); });
   snd.addEventListener("click", () => {
     Snd.on = !Snd.on;
