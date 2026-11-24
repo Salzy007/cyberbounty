@@ -214,3 +214,19 @@ def test_old_database_gets_client_hidden_column(tmp_path):
     conn = sqlite3.connect(path)
     assert any(r[1] == "client_hidden" for r in conn.execute("PRAGMA table_info(bookings)"))
     conn.close()
+
+
+def test_client_clear_notifies_bot(site, tmp_path):
+    """Клиент с Telegram убрал отменённые брони на сайте: боту уходит событие, он чистит чат."""
+    from app.db import connect
+    login(site)
+    conn = connect(tmp_path / "w.db")
+    conn.execute("UPDATE users SET telegram_id = 777")
+    conn.close()
+    a = _book(site, "tgn-key-00001")
+    site.post(f"/api/bookings/{a['id']}/cancel")
+    assert site.post("/api/my-bookings/clear").json() == {"removed": 1}
+    conn = connect(tmp_path / "w.db")
+    kinds = [(r["kind"], r["payload"]) for r in conn.execute("SELECT kind, payload FROM notify_outbox WHERE kind = 'shredded'")]
+    conn.close()
+    assert len(kinds) == 1 and '"chat_id": 777' in kinds[0][1]

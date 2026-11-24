@@ -406,10 +406,13 @@ def create_app(settings: Settings) -> FastAPI:
         user = need_user(request)
         conn = db()
         try:
-            booking.delete_by_client(conn, booking_id, user["id"])
+            gone = booking.delete_by_client(conn, booking_id, user["id"])
+            tg = telegram_id_of(conn, user["id"])
         finally:
             conn.close()
-        hub.publish(0, user["id"])          # только обновить список самому клиенту; бот и админка не затрагиваются
+        hub.publish(0, user["id"])          # обновить список самому клиенту; админка не затрагивается
+        if tg:
+            notify("shredded", chat_id=tg, n=1, code=gone["code"])      # бот чистит чат с билетами, как при стирании
         return {"ok": True}
 
     @app.post("/api/my-bookings/clear")
@@ -418,9 +421,12 @@ def create_app(settings: Settings) -> FastAPI:
         conn = db()
         try:
             removed = booking.clear_mine(conn, user["id"])
+            tg = telegram_id_of(conn, user["id"])
         finally:
             conn.close()
         hub.publish(0, user["id"])
+        if tg and removed:
+            notify("shredded", chat_id=tg, n=removed)
         return {"removed": removed}
 
     # ---------- владелец ----------
