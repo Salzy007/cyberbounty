@@ -873,7 +873,7 @@ html.intro-on:not(.intro-end) .zap, html.lock .zap { opacity: 0; }
 /* параллакс героя */
 .hero__photo.plx { inset: -26% 0 0 0; will-change: transform; }
 .hero__in { will-change: transform, opacity; }
-/* «Как это работает» по прокрутке (большой экран): секция приколота, шаги листаются колесом */
-.sec--how.pin { height: var(--pin-h, auto); padding-bottom: 0; }
-.sec--how.pin > .wrap { position: sticky; top: var(--head); min-height: calc(100svh - var(--head)); display: flex; flex-direction: column; justify-content: center; padding-bottom: 24px; }
 @media (prefers-reduced-motion: reduce) { .gl-go, .gl-go::before, .gl-go::after, .stats b.pop { animation: none; } }
+
+/* блоки при прокрутке не «выплывают»: видны сразу, листать можно спокойно, без ожидания анимации */
+.reveal, .reveal.in, .gcard.reveal, .gcard.reveal.in { opacity: 1; transform: none; }

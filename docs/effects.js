@@ -9,15 +9,15 @@
   const layer = (style) => { const d = document.createElement("div"); d.className = "fx-el fx-top"; d.style.cssText = style; document.body.append(d); return d; };
   const EASE = "cubic-bezier(.2,.7,.3,1)";
 
-  /* ---- 1. глитч заголовков: каждый раз при появлении ---- */
+  /* ---- 1. глитч заголовков: один раз при первом появлении ---- */
   const heads = $$(".sec__head h2, .sec--cta h2");
   heads.forEach((h) => h.setAttribute("data-t", h.textContent));
   if (!reduce) {
     const io = new IntersectionObserver((es) => es.forEach((en) => {
       if (!en.isIntersecting) return;
-      const t = en.target;                                   // каждый раз, когда заголовок появляется на экране
-      t.classList.remove("gl-go"); void t.offsetWidth; t.classList.add("gl-go");
-      clearTimeout(t._gl); t._gl = setTimeout(() => t.classList.remove("gl-go"), 700);
+      const t = en.target;                                   // один раз за визит на страницу
+      t.classList.add("gl-go"); io.unobserve(t);
+      setTimeout(() => t.classList.remove("gl-go"), 700);
     }), { threshold: 0.7 });
     heads.forEach((h) => io.observe(h));
   }
@@ -107,29 +107,6 @@
     };
     addEventListener("scroll", () => { if (!t) { t = true; requestAnimationFrame(upd); } }, { passive: true });
     upd();
-  }
-
-  /* ---- 6. «Как это работает»: шаги листаются прокруткой (экран побольше, телефон остаётся на автозапуске) ---- */
-  const how = $("#how"), stage = $("#howStage");
-  const pinMQ = matchMedia("(min-width: 901px) and (min-height: 780px)");
-  if (how && stage && !reduce) {
-    const STEPS = 5;
-    let t = false, on = false;
-    const setPin = () => {
-      const want = pinMQ.matches;
-      how.classList.toggle("pin", want); on = want;
-      how.style.setProperty("--pin-h", want ? `${(STEPS * 62 + 100)}vh` : "");
-    };
-    const upd = () => {
-      t = false;
-      if (!on) return;
-      const r = how.getBoundingClientRect(), total = how.offsetHeight - innerHeight;
-      if (r.top > 0 || r.bottom < innerHeight) return;               // только пока секция «приколота»
-      const p = Math.min(.999, Math.max(0, -r.top / total)), n = Math.floor(p * STEPS);
-      stage.dispatchEvent(new CustomEvent("howscroll", { detail: n }));
-    };
-    pinMQ.addEventListener("change", setPin); setPin();
-    addEventListener("scroll", () => { if (!t) { t = true; requestAnimationFrame(upd); } }, { passive: true });
   }
 
 })();
