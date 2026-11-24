@@ -927,3 +927,11 @@ html.ready .top { transition: background .3s, box-shadow .3s, opacity .8s var(--
 .ticket__bars { transform-origin: 0 50%; animation: barsIn .8s var(--ease) .15s backwards; }
 @keyframes barsIn { from { transform: scaleX(0); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .seat::after, .ticket__bars { animation: none !important; } }
+
+/* полосы прокрутки внутри окон: тонкие неоновые, без стрелок */
+.drawer__body, .modal__card, .menu, .specs__scroll, .faq__a { scrollbar-width: thin; scrollbar-color: rgba(var(--cyan-rgb), .55) transparent; }
+.drawer__body::-webkit-scrollbar, .modal__card::-webkit-scrollbar, .menu::-webkit-scrollbar, .specs__scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.drawer__body::-webkit-scrollbar-track, .modal__card::-webkit-scrollbar-track, .menu::-webkit-scrollbar-track, .specs__scroll::-webkit-scrollbar-track { background: transparent; }
+.drawer__body::-webkit-scrollbar-thumb, .modal__card::-webkit-scrollbar-thumb, .menu::-webkit-scrollbar-thumb, .specs__scroll::-webkit-scrollbar-thumb { border-radius: 99px; background: linear-gradient(180deg, rgba(var(--cyan-rgb), .75), rgba(var(--amber-rgb), .75)); box-shadow: 0 0 8px rgba(var(--cyan-rgb), .5); }
+.drawer__body::-webkit-scrollbar-button, .modal__card::-webkit-scrollbar-button, .menu::-webkit-scrollbar-button, .specs__scroll::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+.drawer__body::-webkit-scrollbar-corner, .modal__card::-webkit-scrollbar-corner, .specs__scroll::-webkit-scrollbar-corner { background: transparent; }
