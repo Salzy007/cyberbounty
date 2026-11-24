@@ -158,8 +158,7 @@
     var b = db.bookings.filter(function (x) { return x.id === id; })[0];
     if (!b || b.user_id !== uid) throw Err("no_booking", "Такой брони нет.", 404);
     if (b.status === "canceled") throw Err("already", "Бронь уже отменена.", 409);
-    if (b.start_ts <= now) throw Err("started", "Бронь уже началась. Отмену решает клуб: напишите администратору.", 409);
-    return cancelBooking(id, now);
+    return cancelBooking(id, now);                      // в любое время, пока бронь не закончилась (в том числе когда игра уже идёт)
   }
 
   /* ---------- админка ---------- */
@@ -167,11 +166,12 @@
     if (!validIso(dayText)) throw Err("bad_date", "Неверная дата.");
     var d = dayText, dayStart = midnight(d), dayEnd = dayStart + 86400;
     var zs = sortedZones(), zi = {}; zs.forEach(function (z, i) { zi[z.id] = i; });
-    var rows = db.bookings.filter(function (b) { return b.start_ts >= dayStart && b.start_ts < dayEnd; }).sort(function (a, b) {
+    var rows = db.bookings.filter(function (b) { return b.end_ts > dayStart && b.start_ts < dayEnd; }).sort(function (a, b) {      // и брони с прошлой даты, идущие за полночь
       var pa = getPlace(a.place_id), pb = getPlace(b.place_id);
       return a.start_ts - b.start_ts || zi[pa.zone.id] - zi[pb.zone.id] || pa.place.number - pb.place.number;
     });
-    var bookings = rows.map(view), live = bookings.filter(function (b) { return b.status === "confirmed"; });
+    var bookings = rows.map(function (r) { var v = view(r); v.carried = v.start < dayStart; return v; });
+    var live = bookings.filter(function (b) { return b.status === "confirmed" && !b.carried; });
     var near = confirmed().filter(function (b) { return b.end_ts > dayStart && b.start_ts < dayEnd + 86400; });
     var fromTs = Math.ceil(Math.floor(now) / STEP) * STEP;
     var zones = zs.map(function (z) {

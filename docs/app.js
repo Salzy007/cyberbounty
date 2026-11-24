@@ -496,12 +496,12 @@ function collapseOut(el) {
 }
 function bookingCard(b, up) {
   const st = b.status === "canceled" ? '<span class="pill pill--off">Отменена</span>' : up ? '<span class="pill pill--ok">Подтверждена</span>' : '<span class="pill pill--done">Прошла</span>';
-  const canCancel = up && b.start * 1000 > Date.now();
+  const canCancel = up;                                   // отменить можно в любое время, пока бронь не закончилась
   return `<article class="bk ${up ? "bk--up" : b.status === "canceled" || !up ? "bk--off" : ""}" data-id="${b.id}">
     <div class="bk__row"><b>${esc(withZone(b.zone, seatLabel(b), true))}</b>${st}</div>
     <div class="bk__row"><span class="bk__when">${esc(dateLong(b.start))}, ${esc(b.start_time)}–${esc(b.end_time)}</span><span class="bk__code">${esc(b.code)}</span></div>
     <div class="bk__row"><span class="muted-s">${b.hours} ч</span><b class="price">${b.price} BYN</b></div>
-    ${canCancel ? '<div class="bk__act"><button class="mini mini--cancel" data-act="ask" type="button">Отменить</button></div>' : up ? '<p class="bk__note">Бронь уже началась: отмену решает клуб, напишите администратору.</p>' : '<div class="bk__act"><button class="mini mini--clear" data-act="hide" type="button">Убрать</button></div>'}
+    ${canCancel ? '<div class="bk__act"><button class="mini mini--cancel" data-act="ask" type="button">Отменить</button></div>' : '<div class="bk__act"><button class="mini mini--clear" data-act="hide" type="button">Убрать</button></div>'}
   </article>`;
 }
 function renderMy() {

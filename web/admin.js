@@ -32,12 +32,12 @@ async function load() {
 }
 
 function render() {
-  const live = data.bookings.filter((b) => b.status === "confirmed");
+  const live = data.bookings.filter((b) => b.status === "confirmed" && !b.carried);
   $("#kN").textContent = live.length; $("#kSum").textContent = data.total + " BYN"; $("#kOff").textContent = data.canceled_total;
   $("#clear").hidden = !data.canceled_total;
   $("#list").innerHTML = data.bookings.length ? data.bookings.map((b) => `
     <article class="row ${b.status === "canceled" ? "off" : ""}" data-id="${b.id}">
-      <div class="row__t">${esc(b.start_time)}–${esc(b.end_time)}<small>${esc(b.code)} · ${b.hours} ч</small></div>
+      <div class="row__t">${esc(b.start_time)}–${esc(b.end_time)}<small>${esc(b.code)} · ${b.hours} ч${b.carried ? " · с " + esc(b.date) : ""}</small></div>
       <div class="row__m"><b>${esc(b.zone)} · ${esc(b.place)}</b><span>${esc(b.client)}${b.phone ? " · +" + esc(b.phone) : ""}</span></div>
       <div class="row__r"><b class="price">${b.price} BYN</b><div class="row__act">${
         b.status === "canceled" ? '<span class="pill pill--off">Отменена</span><button class="mini" data-act="del" type="button">Стереть</button>'
