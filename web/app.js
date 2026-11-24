@@ -309,7 +309,6 @@ async function confirmBooking() {
     const r = await api("/bookings", { method: "POST", body: { place_id: S.placeId, start: S.start, hours: S.hours, key: S.key } });
     S.key = null; S.placeId = null;
     showTicket(r.booking);
-    if (window.fxBookingZap) window.fxBookingZap();
     await Promise.all([loadSlots(), loadMy()]);
   } catch (e) {
     if (e.status === 401) { S.me = null; renderAuth(); S.pending = true; openLogin(); }

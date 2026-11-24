@@ -66,32 +66,6 @@
     sparks(e.clientX, e.clientY, 5, 30);
   }, { passive: true });
 
-  /* ---- 4. молния при подтверждении брони ---- */
-  const jag = (x0, y0, x1, y1, disp, depth) => {
-    if (!depth) return [[x0, y0], [x1, y1]];
-    const mx = (x0 + x1) / 2 + rnd(-disp, disp), my = (y0 + y1) / 2 + rnd(-disp, disp) * .3;
-    return jag(x0, y0, mx, my, disp / 2, depth - 1).slice(0, -1).concat(jag(mx, my, x1, y1, disp / 2, depth - 1));
-  };
-  window.fxBookingZap = () => {
-    if (reduce) return;
-    const W = innerWidth, H = innerHeight, c1 = css("--amber"), c2 = css("--cyan");
-    const tx = W / 2 + rnd(-.08, .08) * W, ty = H * .42, unit = Math.min(W, 520);
-    const main = jag(tx + rnd(-.12, .12) * W, -10, tx, ty, unit * .16, 5);
-    const forks = [.3, .55, .75].map((f, k) => { const p = main[Math.round((main.length - 1) * f)]; return jag(p[0], p[1], p[0] + (k % 2 ? 1 : -1) * rnd(.08, .18) * unit, p[1] + rnd(.08, .16) * H, unit * .05, 4); });
-    const path = (a) => "M" + a.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" L");
-    const all = [[main, 3], ...forks.map((f) => [f, 1.4])];
-    const lay = (col, m) => all.map(([a, w]) => `<path d="${path(a)}" fill="none" stroke="${col}" stroke-width="${(w * m).toFixed(1)}" stroke-linejoin="round" stroke-linecap="round"/>`).join("");
-    const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
-    svg.setAttribute("class", "fx-el fx-top"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.style.cssText = `left:0;top:0;width:${W}px;height:${H}px;transform-origin:50% 0;`;
-    svg.innerHTML = `<defs><filter id="fxz" x="-20%" y="-5%" width="140%" height="110%"><feGaussianBlur stdDeviation="6"/></filter></defs><g filter="url(#fxz)" opacity=".9">${lay(c2, 5)}</g><g>${lay(c1, 2.2)}</g><g>${lay("#fff", 1)}</g>`;
-    document.body.append(svg);
-    const flash = layer(`left:0;top:0;width:100%;height:100%;background:radial-gradient(circle at ${tx}px ${ty}px, #fff 0, ${c1} 12%, ${c2} 34%, rgba(6,7,13,0) 70%);`);
-    svg.animate({ transform: ["scaleY(.08)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)"], opacity: [0, 1, .4, 1, 0], offset: [0, .12, .28, .45, 1] }, { duration: 640, easing: "linear" }).onfinish = () => svg.remove();
-    flash.animate({ opacity: [0, .8, .1, .35, 0], offset: [0, .14, .3, .4, 1] }, { duration: 560, easing: "linear" }).onfinish = () => flash.remove();
-    setTimeout(() => sparks(tx, ty, 10, 80), 90);
-  };
-
   /* ---- 5. параллакс героя ---- */
   const hero = $("#hero"), photo = $(".hero__photo"), heroIn = $(".hero__in");
   if (hero && photo && heroIn && !reduce) {
@@ -109,4 +83,25 @@
     upd();
   }
 
+
+  /* ---- меню: неоновая черта плавно переезжает к активному пункту ---- */
+  const nav = $(".nav");
+  if (nav) {
+    const bar = document.createElement("i"); bar.className = "nav__bar"; nav.append(bar);
+    let first = true;
+    const place = () => {
+      const a = nav.querySelector("a.on");
+      if (!a || !a.offsetWidth) { bar.classList.remove("on"); return; }
+      const pd = parseFloat(getComputedStyle(a).paddingLeft) || 11;
+      const x = a.offsetLeft + pd, w = a.offsetWidth - pd * 2;
+      if (first) { bar.style.transition = "none"; }
+      bar.style.transform = `translateX(${x}px) scaleX(${(w / 100).toFixed(3)})`;
+      bar.classList.add("on");
+      if (first) { void bar.offsetWidth; bar.style.transition = ""; first = false; }
+    };
+    const mo = new MutationObserver(place);                 // следим только за самими пунктами (не за чертой: иначе бесконечный цикл)
+    $$("a", nav).forEach((a) => mo.observe(a, { attributes: true, attributeFilter: ["class"] }));
+    addEventListener("resize", () => { first = true; place(); });
+    place();
+  }
 })();
