@@ -827,7 +827,7 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 
 #btnTheme span { display: none; }
 #btnTheme { padding: 0; width: 44px; height: 44px; justify-content: center; }
-@media (max-width: 360px) { #btnTheme { display: none; } }
+@media (max-width: 360px) { .top .logo { font-size: 16px; letter-spacing: .05em; gap: 6px; } .top .logo svg { width: 24px; height: 24px; } .top .top__tools { gap: 4px; } .top .chip-btn, .top .burger { width: 40px; height: 40px; } }
 @media (max-width: 480px) {
   .top__in { gap: 8px; }
   .top__tools { gap: 6px; }
@@ -883,7 +883,7 @@ html.intro-on:not(.intro-end) .zap, html.lock .zap { opacity: 0; }
 @keyframes statPop { 0% { transform: scale(1); } 35% { transform: scale(1.35); } 100% { transform: scale(1); } }
 /* параллакс героя */
 .hero__photo.plx { inset: -26% 0 0 0; will-change: transform; }
-.hero__in { will-change: transform, opacity; }
+@media (hover: hover) and (min-width: 901px) { .hero__in { will-change: transform, opacity; } }
 @media (prefers-reduced-motion: reduce) { .gl-go, .gl-go::before, .gl-go::after, .stats b.pop { animation: none; } }
 
 /* блоки при прокрутке не «выплывают»: видны сразу, листать можно спокойно, без ожидания анимации */
@@ -913,3 +913,9 @@ html.ready .top { transition: background .3s, box-shadow .3s, opacity .8s var(--
 .top.hide { transform: translate3d(0, -110%, 0); }
 /* настроение фона по секциям */
 .bg__mood { position: absolute; inset: 0; background: radial-gradient(70% 55% at 80% 35%, var(--moodc), transparent 70%); }
+
+/* телефон: лёгкий режим - без лампочки-ползунка, настроения фона и анимации перекраски фона */
+@media (hover: none), (max-width: 900px) {
+  .zap, .bg__mood { display: none !important; }
+  html { transition: none; }
+}

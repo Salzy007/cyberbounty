@@ -3,6 +3,7 @@
 (() => {
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const PHONE = matchMedia("(hover: none), (max-width: 900px)").matches;   // телефон и планшет: лёгкий режим
   const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const rnd = (a, b) => a + Math.random() * (b - a);
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -26,21 +27,34 @@
   const TILT = ".tile, .gcard";
   let cur = null;
   const untilt = (el) => { if (!el) return; el.style.transform = ""; el.style.transition = ""; el.style.transitionDelay = ""; if (el === cur) cur = null; };
-  const tilt = (e) => {
-    const el = e.target.closest && e.target.closest(TILT);
+  const tiltAt = (el, x, y, amp) => {
     if (cur && el !== cur) untilt(cur);
     if (!el || !el.classList.contains("in")) return;
     cur = el;
-    const r = el.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    const r = el.getBoundingClientRect(), px = (x - r.left) / r.width, py = (y - r.top) / r.height;
     el.style.transitionDelay = "0s"; el.style.transition = "transform .12s ease-out, border-color .3s, box-shadow .3s";
-    el.style.transform = `perspective(800px) rotateX(${((.5 - py) * 12).toFixed(2)}deg) rotateY(${((px - .5) * 14).toFixed(2)}deg) translateY(-3px) scale(1.012)`;
+    el.style.transform = `perspective(800px) rotateX(${((.5 - py) * 12 * amp).toFixed(2)}deg) rotateY(${((px - .5) * 14 * amp).toFixed(2)}deg) translateY(-3px) scale(1.012)`;
     el.style.setProperty("--mx", (px * 100).toFixed(0) + "%"); el.style.setProperty("--my", (py * 100).toFixed(0) + "%");
   };
   if (!reduce) {
-    document.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") tilt(e); }, { passive: true });
-    document.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse") tilt(e); }, { passive: true });
-    ["pointerup", "pointercancel"].forEach((n) => document.addEventListener(n, () => untilt(cur), { passive: true }));
+    document.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") tiltAt(e.target.closest && e.target.closest(TILT), e.clientX, e.clientY, 1); }, { passive: true });
     document.addEventListener("pointerleave", () => untilt(cur));
+    // палец: карточка под пальцем наклоняется к точке касания и следом за пальцем (когда не листаете вертикально)
+    let active = false, locked = false, raf = 0, sx = 0, sy = 0, fx = 0, fy = 0;
+    const follow = () => {
+      raf = 0; if (!active) return;
+      const el = document.elementFromPoint(fx, fy), card = el && el.closest && el.closest(TILT);
+      if (!card) { untilt(cur); return; }
+      tiltAt(card, fx, fy, .8);
+    };
+    document.addEventListener("touchstart", (e) => { const t = e.touches[0]; if (!t) return; sx = fx = t.clientX; sy = fy = t.clientY; active = true; locked = false; if (!raf) raf = requestAnimationFrame(follow); }, { passive: true });
+    document.addEventListener("touchmove", (e) => {
+      const t = e.touches[0]; if (!t || !active) return;
+      fx = t.clientX; fy = t.clientY;
+      if (!locked && Math.abs(fy - sy) > 10 && Math.abs(fy - sy) > Math.abs(fx - sx)) { locked = true; active = false; untilt(cur); return; }   // листаете страницу - не наклоняем
+      if (!raf) raf = requestAnimationFrame(follow);
+    }, { passive: true });
+    ["touchend", "touchcancel"].forEach((n) => document.addEventListener(n, () => { active = false; untilt(cur); }, { passive: true }));
   }
 
   /* ---- 3. искры (места, касания) ---- */
@@ -63,12 +77,12 @@
   document.addEventListener("pointerdown", (e) => {                 // касание пальцем: маленькая искра
     if (e.pointerType === "mouse" || reduce) return;
     if (e.target.closest && e.target.closest("input, textarea, select, .modal")) return;
-    sparks(e.clientX, e.clientY, 5, 30);
+    sparks(e.clientX, e.clientY, 0, 0);                       // на телефоне только лёгкое кольцо
   }, { passive: true });
 
   /* ---- 5. параллакс героя ---- */
   const hero = $("#hero"), photo = $(".hero__photo"), heroIn = $(".hero__in");
-  if (hero && photo && heroIn && !reduce) {
+  if (hero && photo && heroIn && !reduce && !PHONE) {
     photo.classList.add("plx");
     let t = false;
     const upd = () => {
@@ -108,6 +122,32 @@
   /* ---- прокрутка: лампочка-ползунок с метками разделов, бегущая строка по скорости, шапка вниз/вверх, настроение фона ---- */
   (() => {
     const secs = $$("main > section");
+    if (PHONE) {                                                   // телефон: только шапка вниз/вверх и бегущая строка, без лампочки, засечек и перекраски фона
+      const topbar = $("#top"), menu = $("#menu"), track = $(".ticker__track");
+      let last = scrollY, t = false, anim = null, rate = 1, target = 1, loop = 0, lastT = performance.now();
+      const tickLoop = () => {
+        rate += (target - rate) * .16; target += (1 - target) * .07;
+        if (anim) anim.playbackRate = rate;
+        if (Math.abs(rate - 1) < .03 && Math.abs(target - 1) < .03) { if (anim) anim.playbackRate = 1; loop = 0; return; }
+        loop = requestAnimationFrame(tickLoop);
+      };
+      const upd = () => {
+        t = false;
+        const y = scrollY, dy = y - last, now = performance.now();
+        if (topbar && !reduce) {
+          const menuOpen = menu && !menu.hidden;
+          if (y < 160 || dy < -6 || menuOpen || document.documentElement.classList.contains("lock")) topbar.classList.remove("hide");
+          else if (dy > 6) topbar.classList.add("hide");
+        }
+        if (track && !reduce && Math.abs(dy) >= 2) {
+          if (!anim) { anim = track.getAnimations()[0]; if (anim) { try { anim.currentTime = (+anim.currentTime || 0) + 1e7; } catch (err) {} } }
+          if (anim) { target = Math.min(4, Math.max(-2, 1 + (dy / Math.max(8, now - lastT)) * 2)); if (!loop) loop = requestAnimationFrame(tickLoop); }
+        }
+        lastT = now; last = y;
+      };
+      addEventListener("scroll", () => { if (!t) { t = true; requestAnimationFrame(upd); } }, { passive: true });
+      return;
+    }
     const NAMES = { hero: "Главная", how: "Как это работает", book: "Бронь", about: "О нас", services: "Услуги", games: "Игры", reviews: "Отзывы", faq: "Вопросы" };
     const MOOD = { how: "cyan", book: "cyan", about: "amber", services: "violet", games: "pink", reviews: "amber", faq: "cyan" };
     const zap = document.createElement("div");

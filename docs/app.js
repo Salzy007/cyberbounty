@@ -1003,6 +1003,7 @@ init();
   const btn = $("#btnTheme"), root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
   const apply = (on) => { if (on) root.setAttribute("data-theme", "violet"); else root.removeAttribute("data-theme"); btn.setAttribute("aria-pressed", String(on)); if (meta) meta.content = on ? "#07040f" : "#06070d"; };
   apply(root.dataset.theme === "violet");
+  const PHONE = matchMedia("(hover: none), (max-width: 900px)").matches;
   let busy = false;
   /* Смена темы: удар молнии + глитч. Молния бьёт сверху, вспышка, на пике вспышки тема меняется (View Transitions),
      новый вид «сбоит» мерцанием со сдвигом и встаёт на место. Только opacity/transform. ?fx=1 — прежний «круг из кнопки».
@@ -1029,6 +1030,13 @@ init();
     const W = innerWidth, H = innerHeight, R = Math.hypot(Math.max(x, W - x), Math.max(y, H - y));
     const glow = `0 0 24px ${c1}, 0 0 60px ${c2}`;
     const nwAnim = (kf, o) => root.animate(kf, { easing: EASE, pseudoElement: "::view-transition-new(root)", fill: "both", ...o });
+    if (PHONE && FX !== 1) {                            // телефон: только мягкое растворение одним слоем (без молнии, фильтров и дрожи)
+      busy = true;
+      const vt = document.startViewTransition(swap);
+      vt.ready.then(() => nwAnim({ opacity: [0, 1] }, { duration: 420, easing: "ease-in-out" }));
+      vt.finished.finally(() => { busy = false; });
+      return;
+    }
     busy = true;
     if (FX === 1) {                                     // прежний вариант: круг из кнопки
       const vt = document.startViewTransition(swap);
@@ -1088,5 +1096,4 @@ init();
     setTimeout(() => extra.forEach((n) => n.remove()), 1000);
   };
   btn.addEventListener("click", flip);
-  $("#menuTheme").addEventListener("click", flip);
 })();
