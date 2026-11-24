@@ -229,6 +229,14 @@ function buildMap() {
       <svg class="ic"><use href="#${icon}"/></svg><b>${p.number}</b><small></small>
     </button>`).join("")}</div>`;
   S.mapZone = z.id;
+  // волна: места «включаются» от центра схемы к краям (задержка считается от расстояния до центра)
+  const seats = $$("#room .seat"), box = $("#room .map");
+  if (seats.length && box && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const br = box.getBoundingClientRect(), cx = br.left + br.width / 2, cy = br.top + br.height / 2;
+    const d = seats.map((el) => { const r = el.getBoundingClientRect(); return Math.hypot(r.left + r.width / 2 - cx, r.top + r.height / 2 - cy); });
+    const mx = Math.max(...d) || 1;
+    seats.forEach((el, i) => el.style.setProperty("--wd", Math.round((d[i] / mx) * 320) + "ms"));
+  }
 }
 
 function paintMap() {
@@ -1076,7 +1084,7 @@ init();
       const ringD = 140, ring = fxEl(`left:${tx - ringD / 2}px;top:${ty - ringD / 2}px;width:${ringD}px;height:${ringD}px;border-radius:50%;border:3px solid ${c1};box-shadow:0 0 30px ${c2};`);
       ring.animate({ transform: ["scale(.1)", `scale(${Math.hypot(W, H) / ringD})`], opacity: [.95, 0] }, { duration: 650, delay: 0, easing: "cubic-bezier(.2,.7,.3,1)", fill: "both" }); extra.push(ring);
       for (let k = 0; k < (PHONE ? 3 : 7); k++) {                       // «рваные» полосы глитча
-        const bar = fxEl(`left:0;width:100%;top:${rnd(0, H - 40).toFixed(0)}px;height:${rnd(6, 34).toFixed(0)}px;background:linear-gradient(90deg,transparent,${k % 2 ? c1 : c2} 18%,${k % 2 ? c2 : c1} 82%,transparent);${PHONE ? "" : "mix-blend-mode:screen;"}`);
+        const bar = fxEl(`left:${rnd(0, 30).toFixed(0)}%;width:${rnd(45, 70).toFixed(0)}%;border-radius:999px;top:${rnd(0, H - 40).toFixed(0)}px;height:${rnd(6, 26).toFixed(0)}px;background:linear-gradient(90deg,transparent,${k % 2 ? c1 : c2} 18%,${k % 2 ? c2 : c1} 82%,transparent);${PHONE ? "" : "mix-blend-mode:screen;"}`);
         const dx = rnd(30, 90) * (k % 2 ? 1 : -1);
         bar.animate({ opacity: [0, .85, 0, .6, 0], transform: [`translateX(${dx}px)`, `translateX(${-dx / 2}px)`, `translateX(${dx / 3}px)`, "translateX(0)", "translateX(0)"] }, { duration: 420, delay: k * 25, easing: "steps(5, end)", fill: "both" });
         extra.push(bar);

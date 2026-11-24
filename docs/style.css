@@ -216,7 +216,7 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 .map--lounge { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 520px; gap: 18px; }
 .tv { grid-column: 1 / -1; height: 30px; border-radius: 8px; border: 1px solid var(--violet); background: linear-gradient(90deg, rgba(139, 92, 255, .1), rgba(139, 92, 255, .35), rgba(139, 92, 255, .1)); display: grid; place-items: center; font: 700 11px var(--mono); letter-spacing: .3em; color: #cdbdff; box-shadow: 0 0 24px -6px var(--violet); }
 .seat { position: relative; aspect-ratio: 1 / 1.08; border-radius: 14px; border: 1.5px solid rgba(var(--cyan-rgb), .55); background: linear-gradient(180deg, rgba(var(--cyan-rgb), .09), rgba(var(--cyan-rgb), .02)); color: var(--cyan);
-  display: grid; place-items: center; align-content: center; gap: 2px; padding: 4px; animation: seatIn .5s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 28ms);
+  display: grid; place-items: center; align-content: center; gap: 2px; padding: 4px; animation: seatIn .5s var(--ease) backwards; animation-delay: var(--wd, calc(var(--i, 0) * 28ms));
   transition: transform .25s var(--ease), box-shadow .3s, background .25s, border-color .25s, color .25s; }
 .seat .ic { width: 30%; height: auto; max-width: 30px; min-width: 18px; aspect-ratio: 1; stroke-width: 1.7; }
 .seat b { font: 700 clamp(13px, 1.6vw, 17px) var(--mono); line-height: 1; color: #fff; }
@@ -879,7 +879,7 @@ html.intro-on:not(.intro-end) .zap, html.lock .zap { opacity: 0; }
 @keyframes glA { 0% { opacity: .9; transform: translate(-7px, 1px); } 30% { opacity: 0; } 50% { opacity: .8; transform: translate(5px, -1px); } 75% { opacity: 0; } 100% { opacity: 0; } }
 @keyframes glB { 0% { opacity: .9; transform: translate(7px, -1px); } 25% { opacity: .7; transform: translate(-4px, 2px); } 55% { opacity: 0; } 70% { opacity: .8; transform: translate(3px, 0); } 100% { opacity: 0; } }
 /* цифры «щёлкают» в конце счёта */
-.stats b.pop { display: inline-block; animation: statPop .55s var(--ease); }
+.stats b.pop { transform-origin: 0 50%; animation: statPop .55s var(--ease); }
 @keyframes statPop { 0% { transform: scale(1); } 35% { transform: scale(1.35); } 100% { transform: scale(1); } }
 /* параллакс героя */
 .hero__photo.plx { inset: -26% 0 0 0; will-change: transform; }
@@ -919,3 +919,11 @@ html.ready .top { transition: background .3s, box-shadow .3s, opacity .8s var(--
   .zap, .bg__mood { display: none !important; }
   html { transition: none; }
 }
+
+/* волна света по местам при появлении схемы */
+.seat:not([aria-pressed="true"]):not([disabled])::after { animation: seatWave .8s ease backwards; animation-delay: var(--wd, 0ms); }
+@keyframes seatWave { 0% { opacity: 0; } 35% { opacity: .5; } 100% { opacity: 0; } }
+/* штрихкод билета «печатается» слева направо */
+.ticket__bars { transform-origin: 0 50%; animation: barsIn .8s var(--ease) .15s backwards; }
+@keyframes barsIn { from { transform: scaleX(0); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .seat::after, .ticket__bars { animation: none !important; } }

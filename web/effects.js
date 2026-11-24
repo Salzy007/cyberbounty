@@ -117,6 +117,7 @@
     $$("a", nav).forEach((a) => mo.observe(a, { attributes: true, attributeFilter: ["class"] }));
     addEventListener("resize", () => { first = true; place(); });
     place();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { first = true; place(); });
   }
 
   /* ---- прокрутка: лампочка-ползунок с метками разделов, бегущая строка по скорости, шапка вниз/вверх, настроение фона ---- */
@@ -261,5 +262,39 @@
     addEventListener("resize", () => { H = innerHeight; layout(); req(); });
     addEventListener("load", () => { layout(); req(); });
     layout(); update();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layout(); req(); });
   })();
+
+  /* ---- билет: код собирается из случайных символов, как на табло ---- */
+  const tk = $("#ticket");
+  if (tk && !reduce) {
+    const SET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    new MutationObserver(() => {
+      const c = $(".ticket__code", tk);
+      if (!c || c.dataset.board) return;
+      c.dataset.board = "1";
+      const real = c.textContent, n = real.length, t0 = performance.now();
+      c.setAttribute("aria-label", real);
+      const id = setInterval(() => {
+        const k = Math.floor((performance.now() - t0) / 85);
+        let out = "";
+        for (let i = 0; i < n; i++) out += i < k || !/[A-Za-z0-9]/.test(real[i]) ? real[i] : SET[Math.floor(Math.random() * SET.length)];
+        c.textContent = out;
+        if (k >= n) { clearInterval(id); c.textContent = real; }
+      }, 45);
+    }).observe(tk, { childList: true });
+  }
+
+  /* ---- пасхалка: три быстрых нажатия на логотип в подвале = молния и смена темы ---- */
+  const flogo = $(".foot .logo");
+  if (flogo) {
+    let cnt = 0, timer = 0, goTop = 0;
+    flogo.addEventListener("click", (e) => {
+      e.preventDefault();
+      cnt++; clearTimeout(timer); clearTimeout(goTop);
+      timer = setTimeout(() => { cnt = 0; }, 700);
+      if (cnt >= 3) { cnt = 0; const b = $("#btnTheme"); if (b) b.click(); return; }
+      goTop = setTimeout(() => scrollTo({ top: 0, behavior: "smooth" }), 480);        // обычный клик по логотипу всё так же ведёт наверх
+    });
+  }
 })();
