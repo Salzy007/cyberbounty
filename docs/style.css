@@ -833,3 +833,7 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 .fx-el { position: fixed; z-index: 300; pointer-events: none; will-change: transform, opacity; }
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 ::view-transition-group(root) { animation: none; }
+/* молния и вспышка живут отдельными слоями поверх смены темы, а не замораживаются в снимке страницы */
+::view-transition-group(fxbolt), ::view-transition-group(fxflash) { animation: none; }
+::view-transition-old(fxbolt), ::view-transition-old(fxflash) { display: none; }
+::view-transition-new(fxbolt), ::view-transition-new(fxflash) { animation: none; mix-blend-mode: normal; }

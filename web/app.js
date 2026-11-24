@@ -1003,11 +1003,18 @@ init();
   const apply = (on) => { if (on) root.setAttribute("data-theme", "violet"); else root.removeAttribute("data-theme"); btn.setAttribute("aria-pressed", String(on)); if (meta) meta.content = on ? "#07040f" : "#06070d"; };
   apply(root.dataset.theme === "violet");
   let busy = false;
-  /* Смена темы: View Transitions (снимок старого вида, новый «проявляется» поверх), без них — мгновенно с кольцом.
-     Пять вариантов, ?fx=1..5 для сравнения: 1 круг из кнопки, 2 луч сверху вниз, 3 диагональная волна, 4 ударная волна + «вдох», 5 глитч. */
-  const FX = Math.min(5, Math.max(1, +new URLSearchParams(location.search).get("fx") || 1));
+  /* Смена темы: удар молнии + глитч. Молния бьёт сверху, вспышка, на пике вспышки тема меняется (View Transitions),
+     новый вид «сбоит» мерцанием со сдвигом и встаёт на место. Только opacity/transform. ?fx=1 — прежний «круг из кнопки».
+     Без View Transitions (старые браузеры) тема меняется мгновенно. */
+  const FX = +new URLSearchParams(location.search).get("fx") || 0;
   const EASE = "cubic-bezier(.22,1,.36,1)";
+  const NS = "http://www.w3.org/2000/svg";
   const fxEl = (css) => { const d = document.createElement("div"); d.className = "fx-el"; d.style.cssText = css; document.body.append(d); return d; };
+  const bolt = (x0, y0, x1, y1, seg, amp) => {          // ломаная молния от (x0,y0) к (x1,y1)
+    const pts = [[x0, y0]];
+    for (let i = 1; i < seg; i++) { const t = i / seg; pts.push([x0 + (x1 - x0) * t + (Math.random() - .5) * amp, y0 + (y1 - y0) * t + (Math.random() - .5) * amp * .35]); }
+    pts.push([x1, y1]); return pts;
+  };
   const flip = (e) => {
     if (busy) return;
     const on = root.dataset.theme !== "violet";
@@ -1019,39 +1026,42 @@ init();
     const r = e && e.currentTarget && e.currentTarget.getBoundingClientRect ? e.currentTarget.getBoundingClientRect() : null;
     const x = r && r.width ? r.left + r.width / 2 : innerWidth / 2, y = r && r.height ? r.top + r.height / 2 : 0;
     const W = innerWidth, H = innerHeight, R = Math.hypot(Math.max(x, W - x), Math.max(y, H - y));
-    busy = true;
-    const vt = document.startViewTransition(swap);
     const glow = `0 0 24px ${c1}, 0 0 60px ${c2}`;
-    vt.ready.then(() => {
-      const nw = (kf, ms) => root.animate(kf, { duration: ms, easing: EASE, pseudoElement: "::view-transition-new(root)", fill: "both" });
-      const els = [];
-      if (FX === 1) {                       // круг расходится из кнопки, на кромке неоновое кольцо
-        nw({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${R}px at ${x}px ${y}px)`] }, 900);
+    const nwAnim = (kf, o) => root.animate(kf, { easing: EASE, pseudoElement: "::view-transition-new(root)", fill: "both", ...o });
+    busy = true;
+    if (FX === 1) {                                     // прежний вариант: круг из кнопки
+      const vt = document.startViewTransition(swap);
+      vt.ready.then(() => {
+        nwAnim({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${R}px at ${x}px ${y}px)`] }, { duration: 900 });
         const d = 240, ring = fxEl(`left:${x - d / 2}px;top:${y - d / 2}px;width:${d}px;height:${d}px;border-radius:50%;border:3px solid ${c1};box-shadow:${glow},inset ${glow};`);
-        ring.animate({ transform: ["scale(0)", `scale(${2 * R / d})`], opacity: [1, 1, .0] }, { duration: 900, easing: EASE, fill: "both" }); els.push(ring);
-      } else if (FX === 2) {                // луч сверху вниз, за ним новая тема
-        nw({ clipPath: ["inset(0 0 100% 0)", "inset(0 0 0% 0)"] }, 800);
-        const b = fxEl(`left:0;top:-3px;width:100%;height:3px;background:${c1};box-shadow:${glow};`);
-        b.animate({ transform: ["translateY(0)", `translateY(${H + 3}px)`], opacity: [1, 1, 0] }, { duration: 800, easing: EASE, fill: "both" }); els.push(b);
-      } else if (FX === 3) {                // косая волна слева направо
-        const sk = H * .35, tot = W + sk;
-        nw({ clipPath: [`polygon(0 0, 0 0, -${sk}px 100%, -${sk}px 100%)`, `polygon(0 0, ${tot}px 0, ${W}px 100%, -${sk}px 100%)`].map((v, i) => i ? v : `polygon(0px 0, 0px 0, ${-sk}px 100%, ${-sk}px 100%)`) }, 850);
-        const b = fxEl(`left:0;top:-10vh;width:4px;height:120vh;background:${c1};box-shadow:${glow};transform-origin:50% 50%;`);
-        const ang = Math.atan(sk / H) * 180 / Math.PI;
-        b.animate({ transform: [`translateX(0px) rotate(${ang}deg)`, `translateX(${tot}px) rotate(${ang}deg)`], opacity: [1, 1, 0] }, { duration: 850, easing: EASE, fill: "both" }); els.push(b);
-      } else if (FX === 4) {                // ударная волна и «вдох» страницы
-        nw({ opacity: [0, 1], transform: ["scale(1.04)", "scale(1)"] }, 700);
-        for (let i = 0; i < 2; i++) {
-          const d = 200, ring = fxEl(`left:${x - d / 2}px;top:${y - d / 2}px;width:${d}px;height:${d}px;border-radius:50%;border:2px solid ${i ? c2 : c1};box-shadow:${glow};`);
-          ring.animate({ transform: ["scale(0)", `scale(${2 * R / d})`], opacity: [.9, 0] }, { duration: 800, delay: i * 120, easing: "cubic-bezier(.2,.7,.3,1)", fill: "both" }); els.push(ring);
-        }
-      } else {                              // глитч: быстрое мерцание между старым и новым видом
-        root.animate({ opacity: [0, 1, 0, 1, 0, 1, 1], transform: ["translateX(-8px)", "translateX(6px)", "translateX(-4px)", "translateX(5px)", "translateX(-2px)", "translateX(0)", "translateX(0)"] },
-          { duration: 520, easing: "steps(7, end)", pseudoElement: "::view-transition-new(root)", fill: "both" });
-      }
-      setTimeout(() => els.forEach((n) => n.remove()), 1100);
-    });
-    vt.finished.finally(() => { busy = false; });
+        ring.animate({ transform: ["scale(0)", `scale(${2 * R / d})`], opacity: [1, 1, 0] }, { duration: 900, easing: EASE, fill: "both" });
+        setTimeout(() => ring.remove(), 1000);
+      });
+      vt.finished.finally(() => { busy = false; });
+      return;
+    }
+    // --- молния ---
+    const tx = Math.min(W * .85, Math.max(W * .15, W / 2 + (Math.random() - .5) * W * .3)), ty = H * (.5 + Math.random() * .15);
+    const main = bolt(x, 0, tx, ty, 9, Math.min(W, 520) * .22);
+    const br1 = bolt(main[4][0], main[4][1], main[4][0] + (Math.random() < .5 ? -1 : 1) * W * .2, main[4][1] + H * .22, 5, 60);
+    const br2 = bolt(main[6][0], main[6][1], main[6][0] + (Math.random() < .5 ? -1 : 1) * W * .16, main[6][1] + H * .18, 4, 50);
+    const d = (a) => "M" + a.map((p) => p[0].toFixed(0) + " " + p[1].toFixed(0)).join(" L");
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "fx-el"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.cssText = `left:0;top:0;width:${W}px;height:${H}px;transform-origin:50% 0;view-transition-name:fxbolt;filter:drop-shadow(0 0 10px ${c1}) drop-shadow(0 0 26px ${c2});`;
+    svg.innerHTML = [[main, 3.4, 1], [br1, 2, .85], [br2, 1.6, .75]].map(([a, w, o]) => `<path d="${d(a)}" fill="none" stroke="#fff" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" opacity="${o}"/>`).join("");
+    document.body.append(svg);
+    const flash = fxEl(`view-transition-name:fxflash;left:0;top:0;width:100%;height:100%;background:radial-gradient(circle at ${tx}px ${ty}px, #fff 0, ${c1} 18%, ${c2} 45%, rgba(6,7,13,0) 80%);`);
+    svg.animate({ transform: ["scaleY(.05)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)"], opacity: [0, 1, .25, 1, .35, 0], offset: [0, .16, .3, .45, .7, 1] }, { duration: 520, fill: "both", easing: "linear" });
+    flash.animate({ opacity: [0, 0, .95, .2, .6, 0], offset: [0, .15, .2, .4, .55, 1] }, { duration: 600, fill: "both", easing: "linear" });
+    // тема меняется в момент удара, новый вид сбоит и встаёт на место
+    setTimeout(() => {
+      const vt = document.startViewTransition(swap);
+      vt.ready.then(() => {
+        nwAnim({ opacity: [0, 1, 0, 1, 0, 1, 1], transform: ["translateX(-10px) skewX(-3deg)", "translateX(7px)", "translateX(-5px) skewX(2deg)", "translateX(4px)", "translateX(-2px)", "translateX(0)", "translateX(0)"] }, { duration: 460, easing: "steps(7, end)" });
+      });
+      vt.finished.finally(() => { busy = false; });
+    }, 110);
+    setTimeout(() => { svg.remove(); flash.remove(); }, 800);
   };
   btn.addEventListener("click", flip);
   $("#menuTheme").addEventListener("click", flip);
