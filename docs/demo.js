@@ -263,18 +263,18 @@
     if (method === "POST" && path === "/bookings") { var r = createBooking(needUser(now), body, now); if (!r.duplicate) bump(); return r; }
     if (method === "GET" && path === "/my-bookings") {
       var usr = needUser(now);
-      return { bookings: db.bookings.filter(function (b) { return b.user_id === usr.id; }).sort(function (a, b) { return b.start_ts - a.start_ts; }).slice(0, 50).map(view) };
+      return { bookings: db.bookings.filter(function (b) { return b.user_id === usr.id && !b.client_hidden; }).sort(function (a, b) { return b.start_ts - a.start_ts; }).slice(0, 50).map(view) };
     }
     if (method === "DELETE" && (m = path.match(/^\/bookings\/(\d+)$/))) {
       var uid = needUser(now).id, db1 = db.bookings.filter(function (x) { return x.id === +m[1]; })[0];
-      if (!db1 || db1.user_id !== uid) throw Err("no_booking", "Такой брони нет.", 404);
-      if (db1.status !== "canceled" && db1.end_ts > now) throw Err("active", "Стереть можно только отменённую или прошедшую бронь.", 409);
-      db.bookings = db.bookings.filter(function (x) { return x !== db1; }); bump(); return { ok: true };
+      if (!db1 || db1.user_id !== uid || db1.client_hidden) throw Err("no_booking", "Такой брони нет.", 404);
+      if (db1.status !== "canceled" && db1.end_ts > now) throw Err("active", "Убрать можно только отменённую или прошедшую бронь.", 409);
+      db1.client_hidden = 1; bump(); return { ok: true };         // как на сервере: только прячем у клиента, запись остаётся
     }
     if (method === "POST" && path === "/my-bookings/clear") {
-      var uid2 = needUser(now).id, before = db.bookings.length;
-      db.bookings = db.bookings.filter(function (x) { return !(x.user_id === uid2 && x.status === "canceled"); }); bump();
-      return { removed: before - db.bookings.length };
+      var uid2 = needUser(now).id, n = 0;
+      db.bookings.forEach(function (x) { if (x.user_id === uid2 && x.status === "canceled" && !x.client_hidden) { x.client_hidden = 1; n++; } });
+      bump(); return { removed: n };
     }
     if (method === "POST" && (m = path.match(/^\/bookings\/(\d+)\/cancel$/))) { var c = cancelByClient(+m[1], needUser(now).id, now); bump(); return { booking: c }; }
     if (method === "POST" && path === "/admin/login") {

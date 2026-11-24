@@ -294,20 +294,23 @@ def delete_booking(conn, booking_id: int) -> None:
 
 
 def delete_by_client(conn, booking_id: int, user_id: int, now: float | None = None) -> dict:
-    """Клиент стирает из своего списка отменённую или уже прошедшую бронь. Действующую (идёт/будет) — нельзя."""
+    """Клиент убирает из СВОЕГО списка отменённую или уже прошедшую бронь. Строка в базе остаётся:
+    админка, статистика и бот владельца видят её как раньше. Действующую (идёт/будет) убрать нельзя."""
     now = time.time() if now is None else now
     b = get_booking(conn, booking_id)
-    if b["user_id"] != user_id:
+    hidden = conn.execute("SELECT client_hidden FROM bookings WHERE id = ?", (booking_id,)).fetchone()[0]
+    if b["user_id"] != user_id or hidden:
         raise BookingError("no_booking", "Такой брони нет.", 404)
     if b["status"] != "canceled" and b["end"] > now:
-        raise BookingError("active", "Стереть можно только отменённую или прошедшую бронь.", 409)
-    conn.execute("DELETE FROM bookings WHERE id = ? AND (status = 'canceled' OR end_ts <= ?)", (booking_id, int(now)))
+        raise BookingError("active", "Убрать можно только отменённую или прошедшую бронь.", 409)
+    conn.execute("UPDATE bookings SET client_hidden = 1 WHERE id = ?", (booking_id,))
     return b
 
 
 def clear_mine(conn, user_id: int) -> int:
-    """Клиент стирает все свои отменённые брони."""
-    return conn.execute("DELETE FROM bookings WHERE status = 'canceled' AND user_id = ?", (user_id,)).rowcount
+    """Клиент убирает из своего списка все отменённые брони (в базе и в админке они остаются)."""
+    return conn.execute("UPDATE bookings SET client_hidden = 1 WHERE status = 'canceled' AND user_id = ? AND client_hidden = 0",
+                        (user_id,)).rowcount
 
 
 def canceled_owners(conn) -> list[int]:
@@ -326,7 +329,7 @@ def clear_history(conn) -> int:
 
 
 def my_bookings(conn, user_id: int) -> list[dict]:
-    rows = conn.execute(_SELECT + " WHERE b.user_id = ? ORDER BY b.start_ts DESC LIMIT 50", (user_id,))
+    rows = conn.execute(_SELECT + " WHERE b.user_id = ? AND b.client_hidden = 0 ORDER BY b.start_ts DESC LIMIT 50", (user_id,))
     return [booking_view(r) for r in rows]
 
 
