@@ -17,6 +17,10 @@ const isoToDate = (iso) => new Date(iso + "T12:00:00+03:00");
 const ZONE_ICON = { standard: "i-monitor", vip: "i-vip", tournament: "i-table", lounge: "i-sofa" };
 const SEAT_WORD = { PC: "ПК", VIP: "VIP", Table: "Стол", Sofa: "Диван" };
 const seatName = (zone, n) => `${SEAT_WORD[zone.place_word] || zone.place_word} ${n}`;
+const plural = (n, [one, few, many]) => { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many; };
+const PLACE_FORMS = { PC: ["место", "места", "мест"], VIP: ["место", "места", "мест"], Table: ["стол", "стола", "столов"], Sofa: ["диван", "дивана", "диванов"] };
+/* «VIP 2 · VIP» и «VIP · VIP 2» читаются как ошибка: если зона уже есть в названии места, второй раз её не пишем */
+const withZone = (zoneName, label, zoneFirst = false) => label.startsWith(zoneName + " ") ? label : zoneFirst ? `${zoneName} · ${label}` : `${label} · ${zoneName}`;
 
 async function api(path, { method = "GET", body } = {}) {
   const res = await fetch("/api" + path, {
@@ -30,7 +34,7 @@ async function api(path, { method = "GET", body } = {}) {
 
 const S = {
   cfg: null, me: null, zone: null, day: null, slots: [], start: null, hours: 2, placeId: null,
-  busy: {}, hoursSet: false, slotsDay: null, key: null, confirming: false, pending: false, reqId: 0, mapZone: null, my: [],
+  busy: {}, hoursSet: false, has: false, slotsDay: null, key: null, confirming: false, pending: false, reqId: 0, mapZone: null, my: [],
 };
 
 /* ---------- мелочи интерфейса ---------- */
@@ -95,7 +99,7 @@ function renderZones() {
   $("#zones").innerHTML = S.cfg.zones.map((z) => `
     <button class="zone" role="tab" type="button" data-zone="${z.id}" aria-selected="${z.id === S.zone.id}">
       <svg class="ic"><use href="#${ZONE_ICON[z.id] || "i-monitor"}"/></svg><b>${esc(z.name)}</b>
-      <small>${z.places.length} мест · ${z.price} BYN/ч</small>
+      <small>${z.places.length} ${plural(z.places.length, PLACE_FORMS[z.place_word] || PLACE_FORMS.PC)}<span class="zone__dot"> · </span><span class="nw">${z.price} BYN/ч</span></small>
     </button>`).join("");
 }
 
@@ -130,6 +134,8 @@ document.addEventListener("transitionend", (e) => {
 
 const ordered = () => S.slots.filter((s) => !s.after_midnight).concat(S.slots.filter((s) => s.after_midnight));
 const ok = (s, h = S.hours) => (s.free[h] || 0) > 0;
+const anyFree = (s) => Object.values(s.free).some((n) => n > 0);
+const canStart = (s) => (S.hoursSet ? ok(s) : anyFree(s));
 
 function renderTimes() {
   /* не перерисовываем кнопки целиком: меняем только состояние, иначе рамка мигает, а лента времени дёргается */
@@ -149,7 +155,7 @@ function renderTimes() {
   $$(".time", box).forEach((b) => {
     const s = byStart.get(b.dataset.start);
     const sel = s.start === S.start;
-    if (b.disabled !== !ok(s)) b.disabled = !ok(s);
+    if (b.disabled !== !canStart(s)) b.disabled = !canStart(s);
     if (b.getAttribute("aria-selected") !== String(sel)) b.setAttribute("aria-selected", String(sel));
   });
   if (rebuilt) {
@@ -170,11 +176,17 @@ function renderDurs() {
   });
 }
 
-function fixSelection() {
-  /* держим выбор в допустимых границах: время и длительность должны подходить друг другу */
+function fixSelection(report = false) {
+  /* держим выбор в допустимых границах: время и длительность должны подходить друг другу; место не трогаем — его проверит loadBusy */
+  if (!S.start) return;
   const slot = ordered().find((s) => s.start === S.start);
-  if (!slot || !Object.keys(slot.free).some((h) => slot.free[h] > 0)) { S.start = null; S.placeId = null; S.key = null; }      // выбранное время пропало: выбрать заново
-  else if (S.hoursSet && !ok(slot)) { S.hoursSet = false; S.placeId = null; S.key = null; }                                   // длительность не подходит к этому времени: выбрать заново
+  if (!slot || !anyFree(slot)) {
+    if (report) toast(`Время ${tm(S.start)} уже недоступно — выберите другое`, true);
+    S.start = null; S.key = null;
+  } else if (S.hoursSet && !ok(slot)) {
+    if (report) toast(`На ${tm(S.start)} уже нельзя взять ${S.hours} ч — выберите длительность`, true);
+    S.hoursSet = false; S.key = null;
+  }
 }
 
 async function loadSlots(pickFirst = false, silent = false) {
@@ -186,7 +198,7 @@ async function loadSlots(pickFirst = false, silent = false) {
   if (id !== S.reqId) return;
   S.slots = data.slots; S.slotsDay = S.day;
   if (pickFirst) S.start = null;
-  fixSelection();
+  fixSelection(!pickFirst);
   $("#times").classList.remove("loading");
   renderTimes(); renderDurs();
   await loadBusy();
@@ -200,7 +212,11 @@ async function loadBusy() {
     if (id !== S.reqId) return;
     S.busy = r.busy;
   } catch (e) { S.busy = {}; }
-  if (S.placeId && S.busy[S.placeId] !== undefined) { toast("Это место только что заняли. Выберите другое.", true); S.placeId = null; S.key = null; }
+  if (S.placeId && S.busy[S.placeId] !== undefined) {
+    const pl = S.zone.places.find((p) => p.id === S.placeId);
+    toast(`${pl ? seatName(S.zone, pl.number) : "Место"} занято на это время — выберите другое место`, true);
+    S.placeId = null; S.key = null;
+  }
   paintMap();
 }
 
@@ -248,7 +264,7 @@ function swapZone(id) {
 function updateSummary() {
   const z = S.zone, pl = z.places.find((p) => p.id === S.placeId);
   if (S.placeId && !pl) { S.placeId = null; S.key = null; }          // место осталось от другой зоны (быстрое переключение): сбрасываем
-  const has = !!(pl && ready());
+  const has = S.has = !!(pl && ready());
   const price = z.price * S.hours;
   $("#sZone").textContent = z.name;
   $("#sSeat").textContent = has ? seatName(z, pl.number) : "не выбрано";
@@ -261,7 +277,7 @@ function updateSummary() {
     btn.disabled = !has || S.confirming;
     $(".btn__t", btn).textContent = btn.id === "dockConfirm" ? "Подтвердить" : label;
   }
-  $("#dSeat").textContent = has ? `${seatName(z, pl.number)} · ${z.name}` : "";
+  $("#dSeat").textContent = has ? withZone(z.name, seatName(z, pl.number)) : "";
   $("#dWhen").textContent = has ? `${tm(S.start)}–${tm(S.start + S.hours * 3600)} · ${price} BYN` : "";
   syncSteps();
   dock();
@@ -269,8 +285,9 @@ function updateSummary() {
 
 let bookVisible = false;
 function dock() {
-  const on = bookVisible && !!(S.placeId && S.start);
+  const on = bookVisible && !!S.has;
   $("#dock").classList.toggle("on", on);
+  document.body.classList.toggle("dock-on", on);
   $("#dock").setAttribute("aria-hidden", String(!on));
 }
 
@@ -479,7 +496,7 @@ function bookingCard(b, up) {
   const st = b.status === "canceled" ? '<span class="pill pill--off">Отменена</span>' : up ? '<span class="pill pill--ok">Подтверждена</span>' : '<span class="pill pill--done">Прошла</span>';
   const canCancel = up && b.start * 1000 > Date.now();
   return `<article class="bk ${up ? "bk--up" : b.status === "canceled" || !up ? "bk--off" : ""}" data-id="${b.id}">
-    <div class="bk__row"><b>${esc(b.zone)} · ${esc(seatLabel(b))}</b>${st}</div>
+    <div class="bk__row"><b>${esc(withZone(b.zone, seatLabel(b), true))}</b>${st}</div>
     <div class="bk__row"><span class="bk__when">${esc(dateLong(b.start))}, ${esc(b.start_time)}–${esc(b.end_time)}</span><span class="bk__code">${esc(b.code)}</span></div>
     <div class="bk__row"><span class="muted-s">${b.hours} ч</span><b class="price">${b.price} BYN</b></div>
     ${canCancel ? '<div class="bk__act"><button class="mini mini--cancel" data-act="ask" type="button">Отменить</button></div>' : up ? '<p class="bk__note">Бронь уже началась: отмену решает клуб, напишите администратору.</p>' : '<div class="bk__act"><button class="mini mini--clear" data-act="hide" type="button">Убрать</button></div>'}
@@ -541,23 +558,22 @@ $("#btnLogout").addEventListener("click", async () => {
 $("#zones").addEventListener("click", (e) => { const b = e.target.closest("[data-zone]"); if (b) swapZone(b.dataset.zone); });
 $("#days").addEventListener("click", (e) => {
   const b = e.target.closest("[data-day]");
-  if (!b || b.dataset.day === S.day) return;
-  S.day = b.dataset.day; S.placeId = null; S.key = null; S.start = null;
+  if (!b || (b.dataset.day === S.day && S.slotsDay === S.day)) return;
+  S.day = b.dataset.day; S.key = null; S.start = null;
   $$(".day").forEach((d) => d.setAttribute("aria-selected", String(d === b)));
   syncSteps(); updateSummary();
   loadSlots(true);
 });
 $("#times").addEventListener("click", (e) => {
   const b = e.target.closest(".time");
-  if (!b || b.disabled) return;
-  S.start = +b.dataset.start; S.placeId = null; S.key = null;
-  fixSelection();
+  if (!b || b.disabled || S.slotsDay !== S.day) return;
+  S.start = +b.dataset.start; S.key = null;
   renderTimes(); renderDurs(); ++S.reqId; wantScroll = true; loadBusy().then(() => { wantScroll = false; });
 });
 $("#durs").addEventListener("click", (e) => {
   const b = e.target.closest(".dur");
-  if (!b || b.disabled) return;
-  S.hours = +b.dataset.h; S.hoursSet = true; S.placeId = null; S.key = null;
+  if (!b || b.disabled || S.slotsDay !== S.day) return;
+  S.hours = +b.dataset.h; S.hoursSet = true; S.key = null;
   renderTimes(); renderDurs(); ++S.reqId; wantScroll = true; loadBusy().then(() => { wantScroll = false; });
 });
 $("#room").addEventListener("click", (e) => {
@@ -593,6 +609,7 @@ burger.addEventListener("click", () => {
   } else closeMenu();
 });
 menu.addEventListener("click", (e) => { if (e.target.closest("a")) closeMenu(); });
+document.addEventListener("click", (e) => { if (!menu.hidden && !e.target.closest("#menu, #burger")) closeMenu(); });
 
 /* ---------- мгновенные обновления и «сейчас свободно» ---------- */
 /* цены поменял владелец: подтягиваем без перезагрузки страницы */
