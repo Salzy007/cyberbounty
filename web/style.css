@@ -736,3 +736,12 @@ img { -webkit-user-drag: none; user-drag: none; }
 @keyframes appear { from { opacity: 0; transform: translate3d(0, 6px, 0); } }
 .lgn:not([hidden]), .lgn__demo:not([hidden]), .field__err:not([hidden]), .sum__err:not([hidden]), .times__empty:not([hidden]), #tgDemoNote:not([hidden]),
 .chip-btn:not([hidden]), .badge:not([hidden]), #menuMy:not([hidden]), #menuLogin:not([hidden]), #btnLink:not([hidden]) { animation: appear .3s var(--ease) both; }
+
+/* ---------- бронь по шагам: дата -> время и часы -> место; следующий шаг плавно раскрывается ---------- */
+.seq { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 0fr; opacity: 0; visibility: hidden; transition: grid-template-rows .45s var(--ease), opacity .35s ease, visibility 0s .45s; }
+.seq.on { grid-template-rows: 1fr; opacity: 1; visibility: visible; transition-delay: 0s; }
+.seq > div { overflow: hidden; min-height: 0; min-width: 0; }
+.seq.on.settled > div { overflow: visible; }                 /* после раскрытия свечение кнопок не обрезается */
+.step__t { transition: opacity .35s ease, margin .35s var(--ease); }
+.step.locked .step__t { opacity: .6; margin-bottom: 0; }
+.step__hint { color: var(--muted); min-width: 0; }

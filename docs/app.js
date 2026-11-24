@@ -30,7 +30,7 @@ async function api(path, { method = "GET", body } = {}) {
 
 const S = {
   cfg: null, me: null, zone: null, day: null, slots: [], start: null, hours: 2, placeId: null,
-  busy: {}, key: null, confirming: false, pending: false, reqId: 0, mapZone: null, my: [],
+  busy: {}, hoursSet: false, slotsDay: null, key: null, confirming: false, pending: false, reqId: 0, mapZone: null, my: [],
 };
 
 /* ---------- мелочи интерфейса ---------- */
@@ -107,6 +107,27 @@ function renderDays() {
   }).join("");
 }
 
+/* шаги брони идут по порядку: дата -> время и часы -> место */
+const ready = () => !!(S.day && S.start && S.hoursSet);
+let wasReady = false, wantScroll = false;
+function setSeq(el, on) {
+  if (el.classList.contains("on") === on) return;
+  el.classList.toggle("on", on);
+  if (!on) el.classList.remove("settled");
+}
+function syncSteps() {
+  const r = ready();
+  setSeq($("#seqTime"), !!S.day);
+  setSeq($("#seqPlace"), r);
+  $("#step3").classList.toggle("locked", !r);
+  $("#hint2").textContent = !S.day ? "Выберите дату" : !S.start ? "Выберите время" : !S.hoursSet ? "Выберите длительность" : "";
+  if (wantScroll && r && !wasReady) setTimeout(() => $("#step3").scrollIntoView({ behavior: "smooth", block: "nearest" }), 420);    // схема открылась: плавно показываем её
+  wasReady = r;
+}
+document.addEventListener("transitionend", (e) => {
+  if (e.propertyName === "grid-template-rows" && e.target.classList && e.target.classList.contains("seq") && e.target.classList.contains("on")) e.target.classList.add("settled");
+});
+
 const ordered = () => S.slots.filter((s) => !s.after_midnight).concat(S.slots.filter((s) => s.after_midnight));
 const ok = (s, h = S.hours) => (s.free[h] || 0) > 0;
 
@@ -114,9 +135,10 @@ function renderTimes() {
   /* не перерисовываем кнопки целиком: меняем только состояние, иначе рамка мигает, а лента времени дёргается */
   const list = ordered();
   const box = $("#times"), empty = $("#timesEmpty");
-  empty.hidden = list.length > 0;
+  const loaded = S.slotsDay === S.day;
+  empty.hidden = !loaded || list.length > 0;
   if (!list.length) empty.textContent = "На эту дату время вышло. Выберите другой день.";
-  box.hidden = !list.length;
+  box.hidden = loaded && !list.length;
   const sig = list.map((s) => s.start + (s.after_midnight ? "n" : "")).join(",");
   const rebuilt = box.dataset.sig !== sig;
   if (rebuilt) {
@@ -142,7 +164,7 @@ function renderDurs() {
     box.innerHTML = S.cfg.durations.map((h) => `<button class="dur" role="radio" type="button" data-h="${h}">${h}<small> ч</small></button>`).join("");
   }
   $$(".dur", box).forEach((b) => {
-    const h = +b.dataset.h, off = !(slot && ok(slot, h)), on = h === S.hours;
+    const h = +b.dataset.h, off = !(slot && ok(slot, h)), on = S.hoursSet && h === S.hours;
     if (b.disabled !== off) b.disabled = off;
     if (b.getAttribute("aria-checked") !== String(on)) b.setAttribute("aria-checked", String(on));
   });
@@ -150,25 +172,19 @@ function renderDurs() {
 
 function fixSelection() {
   /* держим выбор в допустимых границах: время и длительность должны подходить друг другу */
-  const list = ordered();
-  let slot = list.find((s) => s.start === S.start);
-  if (!slot || !Object.keys(slot.free).some((h) => slot.free[h] > 0)) {
-    slot = list.find((s) => ok(s)) || list.find((s) => Object.values(s.free).some((n) => n > 0)) || null;
-  }
-  S.start = slot ? slot.start : null;
-  if (slot && !ok(slot)) {
-    const hs = S.cfg.durations.filter((h) => ok(slot, h));
-    S.hours = hs.filter((h) => h <= S.hours).pop() || hs[0] || S.hours;
-  }
+  const slot = ordered().find((s) => s.start === S.start);
+  if (!slot || !Object.keys(slot.free).some((h) => slot.free[h] > 0)) { S.start = null; S.placeId = null; S.key = null; }      // выбранное время пропало: выбрать заново
+  else if (S.hoursSet && !ok(slot)) { S.hoursSet = false; S.placeId = null; S.key = null; }                                   // длительность не подходит к этому времени: выбрать заново
 }
 
 async function loadSlots(pickFirst = false, silent = false) {
+  if (!S.day) { S.slots = []; S.slotsDay = null; renderTimes(); renderDurs(); return loadBusy(); }      // дата ещё не выбрана
   const id = ++S.reqId;
   if (!silent) $("#times").classList.add("loading");
   let data;
   try { data = await api(`/zones/${S.zone.id}/slots?date=${S.day}`); } catch (e) { $("#times").classList.remove("loading"); if (!silent) toast(e.message, true); return; }
   if (id !== S.reqId) return;
-  S.slots = data.slots;
+  S.slots = data.slots; S.slotsDay = S.day;
   if (pickFirst) S.start = null;
   fixSelection();
   $("#times").classList.remove("loading");
@@ -178,7 +194,7 @@ async function loadSlots(pickFirst = false, silent = false) {
 
 async function loadBusy() {
   const id = S.reqId;
-  if (!S.start) { S.busy = {}; return paintMap(); }
+  if (!ready()) { S.busy = {}; return paintMap(); }
   try {
     const r = await api(`/zones/${S.zone.id}/busy?at=${S.start}&hours=${S.hours}`);
     if (id !== S.reqId) return;
@@ -206,15 +222,15 @@ function paintMap() {
   let free = 0;
   seats.forEach((el) => {
     const id = +el.dataset.place, label = S.busy[id];
-    const busy = !S.start || label !== undefined;
+    const busy = !ready() || label !== undefined;
     if (!busy) free++;
     el.disabled = busy;
     el.setAttribute("aria-pressed", String(id === S.placeId));
-    $("small", el).textContent = S.start && label !== undefined ? label : "";
+    $("small", el).textContent = ready() && label !== undefined ? label : "";
   });
   const fc = $("#freeCount");
-  fc.textContent = S.start ? (free ? `Свободно ${free} из ${seats.length}` : "Мест нет") : "";
-  fc.style.color = free ? "" : "#ff8da0";
+  fc.textContent = ready() ? (free ? `Свободно ${free} из ${seats.length}` : "Мест нет") : "После выбора времени";
+  fc.style.color = !ready() ? "var(--muted)" : free ? "" : "#ff8da0";
   updateSummary();
 }
 
@@ -232,14 +248,14 @@ function swapZone(id) {
 function updateSummary() {
   const z = S.zone, pl = z.places.find((p) => p.id === S.placeId);
   if (S.placeId && !pl) { S.placeId = null; S.key = null; }          // место осталось от другой зоны (быстрое переключение): сбрасываем
-  const has = !!(pl && S.start);
+  const has = !!(pl && ready());
   const price = z.price * S.hours;
   $("#sZone").textContent = z.name;
   $("#sSeat").textContent = has ? seatName(z, pl.number) : "не выбрано";
-  $("#sDate").textContent = S.start ? dateLong(S.start) : "—";
-  $("#sTime").textContent = S.start ? `${tm(S.start)}–${tm(S.start + S.hours * 3600)} · ${S.hours} ч` : "—";
-  $("#sPrice").textContent = S.start ? `${price} BYN` : "—";
-  const label = has ? `Подтвердить · ${price} BYN` : S.start ? "Выберите место" : "Нет времени";
+  $("#sDate").textContent = S.start ? dateLong(S.start) : S.day ? dateLong(isoToDate(S.day).getTime() / 1000) : "—";
+  $("#sTime").textContent = S.start ? (S.hoursSet ? `${tm(S.start)}–${tm(S.start + S.hours * 3600)} · ${S.hours} ч` : tm(S.start)) : "—";
+  $("#sPrice").textContent = ready() ? `${price} BYN` : "—";
+  const label = has ? `Подтвердить · ${price} BYN` : !S.day ? "Выберите дату" : !S.start ? "Выберите время" : !S.hoursSet ? "Выберите длительность" : "Выберите место";
   for (const [btn] of [[$("#btnConfirm")], [$("#dockConfirm")]]) {
     btn.dataset.off = has ? "" : "1";
     btn.disabled = !has || S.confirming;
@@ -247,6 +263,7 @@ function updateSummary() {
   }
   $("#dSeat").textContent = has ? `${seatName(z, pl.number)} · ${z.name}` : "";
   $("#dWhen").textContent = has ? `${tm(S.start)}–${tm(S.start + S.hours * 3600)} · ${price} BYN` : "";
+  syncSteps();
   dock();
 }
 
@@ -264,7 +281,7 @@ function showErr(msg) {
 }
 
 async function confirmBooking() {
-  if (S.confirming || !S.placeId || !S.start) return;
+  if (S.confirming || !S.placeId || !ready()) return;
   if (!S.me) { S.pending = true; openLogin(); return; }
   S.confirming = true;
   $("#sErr").hidden = true;
@@ -525,8 +542,9 @@ $("#zones").addEventListener("click", (e) => { const b = e.target.closest("[data
 $("#days").addEventListener("click", (e) => {
   const b = e.target.closest("[data-day]");
   if (!b || b.dataset.day === S.day) return;
-  S.day = b.dataset.day; S.placeId = null; S.key = null;
+  S.day = b.dataset.day; S.placeId = null; S.key = null; S.start = null;
   $$(".day").forEach((d) => d.setAttribute("aria-selected", String(d === b)));
+  syncSteps(); updateSummary();
   loadSlots(true);
 });
 $("#times").addEventListener("click", (e) => {
@@ -534,15 +552,13 @@ $("#times").addEventListener("click", (e) => {
   if (!b || b.disabled) return;
   S.start = +b.dataset.start; S.placeId = null; S.key = null;
   fixSelection();
-  renderTimes(); renderDurs(); ++S.reqId; loadBusy();
+  renderTimes(); renderDurs(); ++S.reqId; wantScroll = true; loadBusy().then(() => { wantScroll = false; });
 });
 $("#durs").addEventListener("click", (e) => {
   const b = e.target.closest(".dur");
   if (!b || b.disabled) return;
-  S.hours = +b.dataset.h; S.key = null;
-  const slot = S.slots.find((s) => s.start === S.start);
-  if (!slot || !ok(slot)) fixSelection();
-  renderTimes(); renderDurs(); ++S.reqId; loadBusy();
+  S.hours = +b.dataset.h; S.hoursSet = true; S.placeId = null; S.key = null;
+  renderTimes(); renderDurs(); ++S.reqId; wantScroll = true; loadBusy().then(() => { wantScroll = false; });
 });
 $("#room").addEventListener("click", (e) => {
   const b = e.target.closest(".seat");
@@ -938,13 +954,10 @@ async function init() {
   buildReviews();
   setupPage();
   try { S.cfg = await api("/config"); } catch (e) { toast("Не удалось загрузить данные. Обновите страницу.", true); return; }
-  S.me = S.cfg.me; S.zone = S.cfg.zones[0]; S.day = S.zone.days[0];
+  S.me = S.cfg.me; S.zone = S.cfg.zones[0]; S.day = null;
   S.cfg.zones.forEach((z) => { $$(`[data-price="${z.id}"]`).forEach((el) => (el.textContent = `${z.price} BYN / час`)); });
   renderAuth(); renderZones(); renderDays(); loadProviders();
-  await loadSlots(true);
-  if (!S.slots.length) {                     // сегодня уже поздно — открываем завтра
-    S.day = S.zone.days[1]; renderDays(); await loadSlots(true);
-  }
+  await loadSlots(true);                    // дата не выбрана: рисуется только схема зала (закрытая)
   loadMy(); heroLive(); live();
   setInterval(refresh, 60000);
 }
