@@ -134,12 +134,13 @@
       arc.style.transform = `translate3d(0, ${y - 24}px, 0)`;
       void tip.offsetWidth; tip.classList.add("hit"); arc.classList.add("hit");
     };
-    const showLabel = (clientY) => {
+    const showLabel = (clientY, always) => {
       let k = 0, best = 1e9;
       tickY.forEach((y, i) => { const d = Math.abs(y - clientY); if (d < best) { best = d; k = i; } });
       if (!marked[k]) return;
+      if (!always && best > 14) { label.classList.remove("on"); return; }                 // мышью без нажатия: только рядом с засечкой
       label.textContent = NAMES[marked[k].id];
-      label.style.transform = `translate3d(0, ${Math.min(H - 20, Math.max(20, clientY)) - 14}px, 0)`;
+      label.style.transform = `translate3d(0, ${(tickY[k] - 14).toFixed(1)}px, 0)`;       // подпись стоит ровно напротив своей засечки
       label.classList.add("on");
     };
     // ползунок: тянуть лампочку или кликнуть по линии; рядом с меткой мышью - плавный переход к разделу
@@ -152,9 +153,9 @@
       const k = tickY.findIndex((y) => Math.abs(y - e.clientY) <= 9);
       if (k >= 0 && e.pointerType === "mouse") { marked[k].scrollIntoView({ behavior: "smooth", block: "start" }); showLabel(e.clientY); return; }
       drag = true; zap.classList.add("drag"); try { hit.setPointerCapture(e.pointerId); } catch (err) {}
-      scrollToY(e.clientY); showLabel(e.clientY);
+      scrollToY(e.clientY); req();
     });
-    hit.addEventListener("pointermove", (e) => { if (drag) scrollToY(e.clientY); if (drag || e.pointerType === "mouse") showLabel(e.clientY); });
+    hit.addEventListener("pointermove", (e) => { if (drag) { scrollToY(e.clientY); req(); } else if (e.pointerType === "mouse") showLabel(e.clientY, false); });
     const end = () => { drag = false; zap.classList.remove("drag"); setTimeout(() => { if (!drag) label.classList.remove("on"); }, 500); };
     hit.addEventListener("pointerup", end); hit.addEventListener("pointercancel", end);
     hit.addEventListener("pointerleave", () => { if (!drag) label.classList.remove("on"); });
@@ -192,13 +193,17 @@
       const ty = yOf(p) - 9;
       tip.style.transform = `translate3d(0, ${ty}px, 0)`;
       const on = y > 24; if (on !== shown) { shown = on; zap.classList.toggle("on", on); }
-      let idx = -1; const line = H * .4;
+      let idx = -1; const line = 96;                         // раздел считается текущим, когда его верх дошёл до шапки: лампочка и засечка совпадают
       secs.forEach((sec, i) => { if (sec.getBoundingClientRect().top <= line) idx = i; });
       if (idx !== cur) {
         const first = cur === -1; cur = idx;
         const sec = secs[idx]; document.documentElement.dataset.mood = (sec && MOOD[sec.id]) || "";
         const ti = sec ? marked.indexOf(sec) : -1; ticks.forEach((t, i) => t.classList.toggle("on", i === ti));
         if (!first && shown) spark(ty + 9);
+      }
+      if (drag) {                                             // при перетаскивании подпись едет с лампочкой и называет раздел, который сейчас на экране
+        const cs = secs[cur];
+        if (cs && NAMES[cs.id]) { label.textContent = NAMES[cs.id]; label.style.transform = `translate3d(0, ${(yOf(p) - 14).toFixed(1)}px, 0)`; label.classList.add("on"); }
       }
       const now = performance.now(); kick(dy, Math.max(8, now - lastT)); lastT = now;
       header(y, dy); lastY = y;
