@@ -113,7 +113,7 @@
       <span>CYBER<b>BOUNTY</b></span>
     </a>
     <nav class="nav" aria-label="Разделы">
-      <a href="#hero" data-home>Главное</a><a href="#book">Бронь</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#reviews">Отзывы</a><a href="#faq">FAQ</a>
+      <a href="#hero" data-home>Главное</a><a href="#book">Бронь</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#games">Игры</a><a href="#reviews">Отзывы</a><a href="#faq">FAQ</a>
     </nav>
     <div class="top__tools">
       <button class="chip-btn" id="btnMy" type="button" hidden><svg class="ic"><use href="#i-ticket"/></svg><span>Мои брони</span><i class="badge" id="myBadge" hidden>0</i></button>
@@ -123,7 +123,7 @@
     </div>
   </div>
   <div class="menu" id="menu" hidden>
-    <a href="#hero" data-home>Главное</a><a href="#book">Бронь места</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#reviews">Отзывы</a><a href="#faq">FAQ</a>
+    <a href="#hero" data-home>Главное</a><a href="#book">Бронь места</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#games">Игры</a><a href="#reviews">Отзывы</a><a href="#faq">FAQ</a>
     <button type="button" id="menuMy" hidden>Мои брони</button><button type="button" id="menuLogin">Войти</button>
   </div>
 </header>
@@ -147,8 +147,6 @@
   </div>
   <div class="ticker" aria-hidden="true">
     <div class="ticker__track">
-      <span>CS2</span><span>Dota 2</span><span>Valorant</span><span>Fortnite</span><span>Apex Legends</span><span>League of Legends</span><span>EA FC</span><span>GTA V</span><span>Rocket League</span><span>Overwatch 2</span>
-      <span>CS2</span><span>Dota 2</span><span>Valorant</span><span>Fortnite</span><span>Apex Legends</span><span>League of Legends</span><span>EA FC</span><span>GTA V</span><span>Rocket League</span><span>Overwatch 2</span>
     </div>
   </div>
 </section>
@@ -416,6 +414,16 @@
 </section>
 
 <!-- ============ ОТЗЫВЫ ============ -->
+<section class="sec" id="games">
+  <div class="wrap">
+    <header class="sec__head reveal">
+      <p class="kicker">Игры</p>
+      <h2>Во что играют у нас</h2>
+    </header>
+    <div class="games" id="gamesGrid"></div>
+  </div>
+</section>
+
 <section class="sec sec--rev" id="reviews">
   <div class="wrap">
     <header class="sec__head reveal">
@@ -484,7 +492,7 @@
       <p class="muted-s">Игровой клуб. Демо-проект: клуб, адрес, цены и отзывы вымышленные.</p><p class="muted-s" id="demoNote" hidden>Демо-версия: ваши брони хранятся только в этом браузере.</p>
       <div class="socials" data-socials aria-label="Соцсети"></div>
     </div>
-    <div class="foot__col"><h4>Разделы</h4><a href="#book">Бронь места</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#reviews">Отзывы</a></div>
+    <div class="foot__col"><h4>Разделы</h4><a href="#book">Бронь места</a><a href="#about">О нас</a><a href="#services">Услуги</a><a href="#games">Игры</a><a href="#reviews">Отзывы</a></div>
     <div class="foot__col"><h4>Часы работы</h4><p>Каждый день<br>10:00 – 02:00</p><p class="muted-s">Последняя бронь заканчивается в 02:00</p></div>
     <div class="foot__col"><h4>Контакты</h4><p><svg class="ic ic--s"><use href="#i-pin"/></svg> Минск, демо-адрес</p><p class="muted-s">Связь — через бронь на сайте</p></div>
   </div>
@@ -552,6 +560,21 @@
   </div>
 </div>
 
+<div class="modal" id="mGame" hidden>
+  <div class="modal__back" data-close></div>
+  <div class="modal__card modal__card--game" role="dialog" aria-modal="true" aria-labelledby="gmT">
+    <button class="modal__x modal__x--game" type="button" data-close aria-label="Закрыть"><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="gart gart--big" id="gmArt"></div>
+    <div class="gm__body">
+      <p class="kicker" id="gmGenre"></p>
+      <h3 id="gmT"></h3>
+      <p class="gm__text" id="gmText"></p>
+      <dl class="gm__facts" id="gmFacts"></dl>
+      <a class="btn btn--hot btn--block" id="gmBook" href="#book">Забронировать место</a>
+    </div>
+  </div>
+</div>
+
 <div class="drawer" id="dMy" hidden>
   <div class="modal__back" data-close></div>
   <section class="drawer__card" role="dialog" aria-modal="true" aria-labelledby="myT">
@@ -565,6 +588,7 @@
 
 <script src="site-config.js?v=9"></script>
 <script src="demo.js?v=9"></script>
+<script src="games.js?v=9" defer></script>
 <script src="app.js?v=9" defer></script>
 </body>
 </html>
