@@ -48,21 +48,12 @@ function toast(text, err = false) {
   setTimeout(() => el.remove(), 4100);
 }
 
-let lastFocus = null, lockY = 0;
-/* Блокировка прокрутки страницы под окном. overflow:hidden у body не работает, когда у html тоже задан overflow (в Safari, Google, Telegram
-   страница продолжала листаться), поэтому body фиксируется на месте, а положение прокрутки запоминается и возвращается после закрытия. */
-function lockPage() {
-  if (document.body.classList.contains("lock")) return;
-  lockY = scrollY;
-  document.body.style.top = -lockY + "px";
-  document.body.classList.add("lock");
-}
-function unlockPage() {
-  if (!document.body.classList.contains("lock")) return;
-  document.body.classList.remove("lock");
-  document.body.style.top = "";
-  scrollTo({ top: lockY, left: 0, behavior: "instant" });
-}
+let lastFocus = null;
+/* Блокировка прокрутки страницы под окном: overflow:hidden на html (у body он не работает, когда у html тоже задан overflow). Положение страницы
+   не теряется и ничего не нужно возвращать: раньше body фиксировался в позиции и после закрытия окна заново считалась раскладка всей страницы,
+   на iPhone это давало фриз при выходе из «Моих броней». */
+function lockPage() { document.documentElement.classList.add("lock"); }
+function unlockPage() { document.documentElement.classList.remove("lock"); }
 function openModal(el) {
   if (!el.hidden && !el.classList.contains("closing")) return;        // уже открыто: повторное касание ничего не делает
   lastFocus = document.activeElement;
