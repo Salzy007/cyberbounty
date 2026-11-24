@@ -25,17 +25,21 @@
     { id: "lounge", name: "Lounge", tagline: "PlayStation 5 · диваны · 4K TV", price: 10, open_min: 600, close_min: 1560, place_word: "Sofa", sort: 3, count: 4 },
   ];
   function fresh() {
-    var db = { v: 1, zones: {}, places: [], bookings: [], users: [], nextBooking: 1, nextUser: 1, nextPlace: 1, seeded: {}, session: null, admin: null, version: 1 };
+    var db = { v: 1, reset: RESET, zones: {}, places: [], bookings: [], users: [], nextBooking: 1, nextUser: 1, nextPlace: 1, seeded: {}, session: null, admin: null, version: 1 };
     ZONES.forEach(function (z) {
       db.zones[z.id] = { id: z.id, name: z.name, tagline: z.tagline, price: z.price, open_min: z.open_min, close_min: z.close_min, place_word: z.place_word, sort: z.sort };
       for (var n = 1; n <= z.count; n++) db.places.push({ id: db.nextPlace++, zone_id: z.id, number: n });
     });
     return db;
   }
+  var RESET = 2;                       // номер полной очистки броней (см. load)
   var db;
   function load() {
     try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { db = null; }
     if (!db || db.v !== 1) db = fresh();
+    /* Однократная полная очистка всех броней в демо (поднять RESET — и у каждого посетителя при следующем открытии брони обнулятся).
+       Аккаунты и вход сохраняются. Нужна, когда в браузере остались брони, которых владелец не видит. */
+    if (db.reset !== RESET) { db.bookings = []; db.nextBooking = 1; db.seeded = {}; db.reset = RESET; db.version = (db.version || 1) + 1; save(); }
     /* раньше демо подсыпало выдуманные брони (user_id 0): убираем их, занятыми должны быть только настоящие брони посетителя */
     var before = db.bookings.length;
     db.bookings = db.bookings.filter(function (b) { return b.user_id !== 0; });
