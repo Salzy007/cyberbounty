@@ -14,6 +14,10 @@ function Start-Hidden($exe, $argList, $dir, $log) {
 if (-not (Test-Port 8002)) { Start-Hidden "$site\.venv\Scripts\python.exe" "main.py" $site "$site\data\server" }
 if (-not (Test-Port 8001)) { Start-Hidden "$bot\.venv\Scripts\python.exe" "main.py" $bot "$bot\data\server" }
 Start-Sleep -Seconds 5
-if (-not (Get-Process ngrok -ErrorAction SilentlyContinue)) {
-    Start-Hidden $ngrok "http --url=$domain 8001" $site "$site\data\ngrok"
+# Если ngrok не смог подключиться, он завершается: следим и перезапускаем раз в 30 с, пока не подключится.
+while ($true) {
+    if (-not (Get-Process ngrok -ErrorAction SilentlyContinue)) {
+        Start-Hidden $ngrok "http --url=$domain 8001" $site "$site\data\ngrok"
+    }
+    Start-Sleep -Seconds 30
 }
