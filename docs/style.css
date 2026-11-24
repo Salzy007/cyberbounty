@@ -837,3 +837,18 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 ::view-transition-group(fxbolt), ::view-transition-group(fxflash) { animation: none; }
 ::view-transition-old(fxbolt), ::view-transition-old(fxflash) { display: none; }
 ::view-transition-new(fxbolt), ::view-transition-new(fxflash) { animation: none; mix-blend-mode: normal; }
+
+/* «разряд» при прокрутке (только transform и opacity) */
+.zap { position: fixed; right: 0; top: 0; bottom: 0; width: 3px; z-index: 45; pointer-events: none; opacity: 0; transition: opacity .4s ease; }
+.zap.on { opacity: 1; }
+html.intro-on .zap, html.lock .zap { opacity: 0; }
+.zap::before { content: ""; position: absolute; inset: 0; background: rgba(var(--cyan-rgb), .1); }
+.zap__fill { position: absolute; inset: 0; transform-origin: 50% 0; transform: scaleY(0); background: linear-gradient(180deg, var(--cyan), var(--amber)); box-shadow: 0 0 10px rgba(var(--cyan-rgb), .8); will-change: transform; }
+.zap__tip { position: absolute; right: -5px; top: 0; width: 12px; height: 12px; will-change: transform; }
+.zap__tip b { position: absolute; inset: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 3px var(--amber), 0 0 24px 6px rgba(var(--amber-rgb), .6); }
+.zap__tip.hit b { animation: zapHit .6s ease-out; }
+@keyframes zapHit { 0% { transform: scale(1); } 25% { transform: scale(2.8); } 100% { transform: scale(1); } }
+.zap__arc { position: absolute; right: 6px; top: 0; width: 60px; height: 24px; opacity: 0; stroke: #fff; stroke-width: 1.8; filter: drop-shadow(0 0 5px var(--amber)) drop-shadow(0 0 12px var(--cyan)); will-change: transform; }
+.zap__arc.hit { animation: zapArc .55s steps(6, end); }
+@keyframes zapArc { 0% { opacity: 1; } 20% { opacity: .2; } 35% { opacity: 1; } 55% { opacity: .3; } 70% { opacity: .9; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .zap__tip.hit b, .zap__arc.hit { animation: none; } }

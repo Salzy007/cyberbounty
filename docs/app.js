@@ -1089,3 +1089,36 @@ init();
   btn.addEventListener("click", flip);
   $("#menuTheme").addEventListener("click", flip);
 })();
+
+/* ---------- «разряд» при прокрутке: неоновая линия у правого края растёт с прокруткой, на стыках секций вспыхивает искра ---------- */
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const zap = document.createElement("div");
+  zap.className = "zap"; zap.setAttribute("aria-hidden", "true");
+  zap.innerHTML = '<i class="zap__fill"></i><i class="zap__tip"><b></b></i><svg class="zap__arc" viewBox="0 0 60 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M60 12 L48 6 L40 15 L28 5 L18 14 L6 8"/></svg>';
+  document.body.append(zap);
+  const fill = zap.querySelector(".zap__fill"), tip = zap.querySelector(".zap__tip"), arc = zap.querySelector(".zap__arc");
+  const secs = [...document.querySelectorAll("main > section")];
+  let H = innerHeight, ticking = false, cur = -1, shown = false;
+  const spark = (y) => {
+    if (reduce) return;
+    tip.classList.remove("hit"); arc.classList.remove("hit");
+    arc.style.transform = `translate3d(0, ${y - 12}px, 0)`;
+    void tip.offsetWidth; tip.classList.add("hit"); arc.classList.add("hit");
+  };
+  const update = () => {
+    ticking = false;
+    const max = document.documentElement.scrollHeight - H, y = scrollY, p = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+    fill.style.transform = `scaleY(${p})`;
+    const ty = p * (H - 12);
+    tip.style.transform = `translate3d(0, ${ty}px, 0)`;
+    const on = y > 24; if (on !== shown) { shown = on; zap.classList.toggle("on", on); }
+    let idx = -1; const line = H * .4;
+    secs.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+    if (idx !== cur) { const first = cur === -1; cur = idx; if (!first && shown) spark(ty + 6); }
+  };
+  const req = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  addEventListener("scroll", req, { passive: true });
+  addEventListener("resize", () => { H = innerHeight; req(); });
+  update();
+})();
