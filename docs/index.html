@@ -20,8 +20,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb21e' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.5' stroke-dasharray='3.2 2.6'/%3E%3Cpath d='M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4'/%3E%3Ccircle cx='12' cy='12' r='2' fill='%2335e6ff' stroke='none'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/exo2-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/exo2-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="fonts.css?v=a1933ee6">
-<link rel="stylesheet" href="style.css?v=a1933ee6">
+<link rel="stylesheet" href="fonts.css?v=e0986bf9">
+<link rel="stylesheet" href="style.css?v=e0986bf9">
 <script>
 (function () {
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -48,7 +48,7 @@
 })();
 </script>
 <noscript><style>.intro{display:none!important}.hero__in>*{opacity:1!important;transform:none!important}</style></noscript>
-<script src="nocopy.js?v=a1933ee6"></script>
+<script src="nocopy.js?v=e0986bf9"></script>
 </head>
 <body>
 
@@ -194,7 +194,7 @@
             </div>
             <!-- 2. время -->
             <div class="mk">
-              <h4 class="a" style="--d:.1s">Когда?</h4>
+              <h4 class="a" style="--d:.1s">Время</h4>
               <div class="mkrow a" style="--d:.25s"><span class="mkc pick" style="--p:1.3s">Сегодня</span><span class="mkc">Завтра</span><span class="mkc">Вт</span><span class="mkc">Ср</span></div>
               <div class="mkgrid a" style="--d:.45s"><span class="mkc">18:00</span><span class="mkc">19:00</span><span class="mkc pick" style="--p:2.3s">20:00</span><span class="mkc">21:00</span><span class="mkc">22:00</span><span class="mkc">23:00</span><span class="mkc">00:00</span><span class="mkc">01:00</span></div>
               <div class="mkrow a" style="--d:.65s"><span class="mkc">1 ч</span><span class="mkc pick" style="--p:3.2s">2 ч</span><span class="mkc">3 ч</span><span class="mkc">5 ч</span></div>
@@ -252,25 +252,34 @@
           <div class="zones" id="zones" role="tablist" aria-label="Зона"></div>
         </div>
 
-        <div class="card step reveal">
-          <div class="step__t"><b>2</b>Когда</div>
-          <div class="days" id="days" role="listbox" aria-label="Дата"></div>
-          <div class="times-wrap">
-            <div class="times" id="times" role="listbox" aria-label="Время начала"></div>
-            <p class="times__empty" id="timesEmpty" hidden></p>
+        <div class="card step reveal" id="step2">
+          <div class="step__t step__t--row">
+            <span><b>2</b>Время</span>
+            <span class="free-count step__hint" id="hint2" aria-live="polite"></span>
           </div>
-          <div class="durs" id="durs" role="radiogroup" aria-label="Длительность"></div>
+          <div class="days" id="days" role="listbox" aria-label="Дата"></div>
+          <!-- время и часы открываются после выбора даты -->
+          <div class="seq" id="seqTime"><div>
+            <div class="times-wrap">
+              <div class="times" id="times" role="listbox" aria-label="Время начала"></div>
+              <p class="times__empty" id="timesEmpty" hidden></p>
+            </div>
+            <div class="durs" id="durs" role="radiogroup" aria-label="Длительность"></div>
+          </div></div>
         </div>
 
-        <div class="card step reveal">
+        <div class="card step reveal locked" id="step3">
           <div class="step__t step__t--row">
             <span><b>3</b>Место</span>
             <span class="free-count" id="freeCount" aria-live="polite"></span>
           </div>
-          <div class="room" id="room" aria-label="Схема зала"></div>
-          <ul class="legend" aria-hidden="true">
-            <li><i class="lg lg--free"></i>Свободно</li><li><i class="lg lg--busy"></i>Занято</li><li><i class="lg lg--sel"></i>Ваш выбор</li>
-          </ul>
+          <!-- схема зала открывается после выбора времени и часов -->
+          <div class="seq" id="seqPlace"><div>
+            <div class="room" id="room" aria-label="Схема зала"></div>
+            <ul class="legend" aria-hidden="true">
+              <li><i class="lg lg--free"></i>Свободно</li><li><i class="lg lg--busy"></i>Занято</li><li><i class="lg lg--sel"></i>Ваш выбор</li>
+            </ul>
+          </div></div>
         </div>
       </div>
 
@@ -554,8 +563,8 @@
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="site-config.js?v=a1933ee6"></script>
-<script src="demo.js?v=a1933ee6"></script>
-<script src="app.js?v=a1933ee6" defer></script>
+<script src="site-config.js?v=e0986bf9"></script>
+<script src="demo.js?v=e0986bf9"></script>
+<script src="app.js?v=e0986bf9" defer></script>
 </body>
 </html>
