@@ -841,7 +841,7 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 /* «разряд» при прокрутке (только transform и opacity) */
 .zap { position: fixed; right: 8px; top: 0; bottom: 0; width: 5px; border-radius: 3px; z-index: 45; pointer-events: none; opacity: 0; transition: opacity .4s ease; }
 .zap.on { opacity: 1; }
-html.intro-on .zap, html.lock .zap { opacity: 0; }
+html.intro-on:not(.intro-end) .zap, html.lock .zap { opacity: 0; }
 .zap::before { content: ""; position: absolute; inset: 0; background: rgba(var(--cyan-rgb), .22); border-radius: 3px; }
 .zap__fill { position: absolute; inset: 0; transform-origin: 50% 0; transform: scaleY(0); background: linear-gradient(180deg, var(--cyan), var(--amber)); border-radius: 3px; box-shadow: 0 0 14px 2px rgba(var(--cyan-rgb), .9); will-change: transform; }
 .zap__tip { position: absolute; right: -6.5px; top: 0; width: 18px; height: 18px; will-change: transform; }
