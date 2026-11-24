@@ -151,6 +151,11 @@ def test_client_deletes_own_canceled_only(site):
     assert site.delete(f"/api/bookings/{b['id']}").status_code == 200
     assert site.get("/api/my-bookings").json()["bookings"] == []
     assert site.delete(f"/api/bookings/{b['id']}").status_code == 404
+    # у клуба запись осталась: клиент только убрал её из своего списка
+    assert site.post("/api/admin/login", json={"password": PASSWORD}).status_code == 200
+    day = site.get("/api/admin/day", params={"date": tomorrow()}).json()
+    assert [(x["id"], x["status"]) for x in day["bookings"]] == [(b["id"], "canceled")]
+    site.post("/api/admin/logout")
     assert site.post("/api/bookings", json={"place_id": 1, "start": b["start"], "hours": 1, "key": "del-key-00002"}).status_code == 200
 
 
@@ -167,6 +172,9 @@ def test_clear_mine_only_my_canceled(site):
     assert site.post("/api/my-bookings/clear").json() == {"removed": 1}
     assert [x["id"] for x in site.get("/api/my-bookings").json()["bookings"]] == [live["id"]]
     assert len(other.get("/api/my-bookings").json()["bookings"]) == 1       # у соседа осталась
+    assert site.post("/api/my-bookings/clear").json() == {"removed": 0}      # повторно убирать нечего
+    assert site.post("/api/admin/login", json={"password": PASSWORD}).status_code == 200
+    assert site.get("/api/admin/day", params={"date": tomorrow()}).json()["canceled_total"] == 2   # у владельца обе отменённые на месте
     assert TestClient(site.app).delete(f"/api/bookings/{a['id']}").status_code == 401
 
 
@@ -191,3 +199,18 @@ def test_price_change_changes_signature_and_config(site):
     assert site.patch("/api/admin/zones/standard", json={"price": before + 1}).status_code == 200
     assert site.get("/api/config").json()["zones"][0]["price"] == before + 1
     assert site.get("/api/wait").json()["version"] > v0                       # сайт и бот узнают о смене цены сразу
+
+
+def test_old_database_gets_client_hidden_column(tmp_path):
+    """База без колонки client_hidden (созданная до этой функции) обновляется сама, брони не теряются."""
+    import sqlite3
+    from app import db
+    path = tmp_path / "old.db"
+    db.init_db(path)
+    conn = sqlite3.connect(path)
+    conn.execute("ALTER TABLE bookings DROP COLUMN client_hidden")
+    conn.commit(); conn.close()
+    db.init_db(path)
+    conn = sqlite3.connect(path)
+    assert any(r[1] == "client_hidden" for r in conn.execute("PRAGMA table_info(bookings)"))
+    conn.close()

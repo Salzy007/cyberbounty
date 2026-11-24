@@ -406,12 +406,10 @@ def create_app(settings: Settings) -> FastAPI:
         user = need_user(request)
         conn = db()
         try:
-            gone = booking.delete_by_client(conn, booking_id, user["id"])
+            booking.delete_by_client(conn, booking_id, user["id"])
         finally:
             conn.close()
-        hub.publish(0, user["id"])
-        if gone.get("telegram_id"):
-            notify("shredded", chat_id=gone["telegram_id"], n=1, code=gone["code"])
+        hub.publish(0, user["id"])          # только обновить список самому клиенту; бот и админка не затрагиваются
         return {"ok": True}
 
     @app.post("/api/my-bookings/clear")
@@ -419,13 +417,10 @@ def create_app(settings: Settings) -> FastAPI:
         user = need_user(request)
         conn = db()
         try:
-            tg = telegram_id_of(conn, user["id"])
             removed = booking.clear_mine(conn, user["id"])
         finally:
             conn.close()
         hub.publish(0, user["id"])
-        if removed and tg:
-            notify("shredded", chat_id=tg, n=removed)
         return {"removed": removed}
 
     # ---------- владелец ----------

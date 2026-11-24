@@ -369,7 +369,8 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 .mini { height: 38px; padding: 0 16px; border-radius: 11px; border: 1px solid var(--line2); font-weight: 700; font-size: 14px; transition: border-color .2s, background .2s, color .2s; }
 /* красный при наведении только у мыши: на телефоне :hover «залипает» после касания и кнопка меняла цвет */
 @media (hover: hover) { .mini--cancel:hover { border-color: var(--red); color: #ff8da0; } }
-.mini--toggle { color: #c5cbe8; }
+.mini--clear { color: #c5cbe8; }
+.sub-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .bk__note { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
 .mini--yes { border-color: var(--red); background: rgba(255, 61, 90, .14); color: #ff8da0; }
 @media (hover: hover) { .mini--no:hover { border-color: var(--cyan); color: #fff; } }

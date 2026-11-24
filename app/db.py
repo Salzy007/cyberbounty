@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS bookings (
     status       TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'canceled')),
     idem_key     TEXT,                                 -- защита от двойного нажатия
     created_ts   INTEGER NOT NULL,
-    canceled_ts  INTEGER
+    canceled_ts  INTEGER,
+    client_hidden INTEGER NOT NULL DEFAULT 0           -- клиент убрал бронь из СВОЕГО списка; в админке и у владельца она остаётся
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_bookings_key ON bookings (user_id, idem_key) WHERE idem_key IS NOT NULL;
 CREATE INDEX IF NOT EXISTS ix_bookings_place ON bookings (place_id, status, start_ts);
@@ -127,6 +128,8 @@ def init_db(db_path: Path) -> None:
         if conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'users'").fetchone():
             _migrate_users(conn)
         conn.executescript(SCHEMA)
+        if not any(r["name"] == "client_hidden" for r in conn.execute("PRAGMA table_info(bookings)")):
+            conn.execute("ALTER TABLE bookings ADD COLUMN client_hidden INTEGER NOT NULL DEFAULT 0")      # старая база
         if conn.execute("SELECT COUNT(*) FROM zones").fetchone()[0] == 0:
             for sort, (zid, name, tagline, price, word, count) in enumerate(SEED_ZONES):
                 conn.execute(
