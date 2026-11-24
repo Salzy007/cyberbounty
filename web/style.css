@@ -767,7 +767,8 @@ body.dock-on .toasts { transform: translate3d(-50%, -88px, 0); }
 .gcard.reveal.in { transition: transform .35s var(--ease), border-color .3s, opacity .8s var(--ease); }
 .gart { display: block; position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #0a0c1d; }
 .gart img { width: 100%; height: 100%; object-fit: cover; }
-.gart--big { aspect-ratio: 16 / 9; border-radius: 24px 24px 0 0; }
+.gart--big { aspect-ratio: 16 / 10; border-radius: 24px 24px 0 0; }
+.gart--big img { object-position: center 25%; }
 .gart__plate { position: absolute; inset: 0; display: grid; place-items: center; padding: 14px; text-align: center; background: linear-gradient(160deg, hsl(var(--h) 70% 22%), #0a0c1d 80%); }
 .gart__plate b { font: 800 clamp(20px, 2.2vw, 28px)/1.1 var(--font); letter-spacing: .02em; text-wrap: balance; overflow-wrap: anywhere; }
 .gcard__t { display: grid; align-content: center; gap: 2px; padding: 0 14px; min-width: 0; }
