@@ -723,12 +723,13 @@ function setupFx() {
   const root = document.documentElement, glow = $("#glow"), cv = $("#fx"), ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let W = 0, H = 0, dpr = 1, nodes = [];
+  const CY = () => document.documentElement.dataset.theme === "violet" ? "255,79,216" : "53,230,255";
   let mx = -999, my = -999, gx = -999, gy = -999, lastX = -1, lastY = -1, hidden = false;
   const resize = () => {
     dpr = Math.min(devicePixelRatio || 1, 1.5); W = innerWidth; H = innerHeight;
     cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const n = Math.max(26, Math.min(64, Math.round((W * H) / 24000)));
-    nodes = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .28, vy: (Math.random() - .5) * .28, r: 1 + Math.random() * 1.6, c: Math.random() < .5 ? "53,230,255" : Math.random() < .5 ? "139,92,255" : "255,61,240" }));
+    nodes = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .28, vy: (Math.random() - .5) * .28, r: 1 + Math.random() * 1.6, c: Math.random() < .5 ? "cy" : Math.random() < .5 ? "139,92,255" : "255,61,240" }));
   };
   resize(); addEventListener("resize", resize);
   const point = (e) => { mx = e.clientX; my = e.clientY; if (gx < -900) { gx = mx; gy = my; } glow.classList.add("on"); };
@@ -756,11 +757,11 @@ function setupFx() {
       const a = nodes[i];
       for (let j = i + 1; j < nodes.length; j++) {
         const b = nodes[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy;
-        if (d2 < 16900) { ctx.strokeStyle = `rgba(${a.c},${(1 - Math.sqrt(d2) / 130) * .22})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+        if (d2 < 16900) { ctx.strokeStyle = `rgba(${a.c === "cy" ? CY() : a.c},${(1 - Math.sqrt(d2) / 130) * .22})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
       }
       const cx = a.x - gx, cy = a.y - gy, cd = cx * cx + cy * cy;
-      if (mx > -900 && cd < 40000) { ctx.strokeStyle = `rgba(53,230,255,${(1 - Math.sqrt(cd) / 200) * .55})`; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(gx, gy); ctx.stroke(); }
-      ctx.fillStyle = `rgba(${a.c},.85)`; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 6.2832); ctx.fill();
+      if (mx > -900 && cd < 40000) { ctx.strokeStyle = `rgba(${CY()},${(1 - Math.sqrt(cd) / 200) * .55})`; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(gx, gy); ctx.stroke(); }
+      ctx.fillStyle = `rgba(${a.c === "cy" ? CY() : a.c},.85)`; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 6.2832); ctx.fill();
     }
     if (!reduce) requestAnimationFrame(tick);
   }
@@ -993,4 +994,19 @@ init();
   });
   $$("[data-tg-link]").forEach((a) => { a.href = L.botUrl; });
   if (window.CB_DEMO) { const n = $("#tgDemoNote"); if (n) n.hidden = false; }
+})();
+
+
+/* ---------- тема: «неоновый фиолет» по кнопке, выбор помнится в браузере ---------- */
+(() => {
+  const btn = $("#btnTheme"), root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
+  const apply = (on) => { if (on) root.setAttribute("data-theme", "violet"); else root.removeAttribute("data-theme"); btn.setAttribute("aria-pressed", String(on)); if (meta) meta.content = on ? "#07040f" : "#06070d"; };
+  apply(root.dataset.theme === "violet");
+  const flip = () => {
+    const on = root.dataset.theme !== "violet";
+    apply(on);
+    try { localStorage.setItem("cb_theme", on ? "violet" : "default"); } catch (e) {}
+  };
+  btn.addEventListener("click", flip);
+  $("#menuTheme").addEventListener("click", flip);
 })();
