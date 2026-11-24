@@ -614,8 +614,6 @@ body { overscroll-behavior-x: none; }
   .ring { animation: none; }
   /* фильтры и маски заставляют видеокарту делать лишние проходы на каждом кадре прокрутки */
   .times { mask-image: none; -webkit-mask-image: none; }
-  /* пока палец листает страницу, бегущие строки, пульс и ролик стоят: вся мощность уходит на прокрутку (Telegram) */
-  html.scrolling .ticker__track, html.scrolling .mrow, html.scrolling .live-dot::after, html.scrolling .how *, html.scrolling .how *::before, html.scrolling .how *::after { animation-play-state: paused !important; }
   .marquee { mask-image: none; -webkit-mask-image: none; }
   .top.stuck { background: rgba(6, 7, 13, .94); }
   .menu { background: rgba(6, 7, 13, .98); }

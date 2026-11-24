@@ -606,15 +606,8 @@ function setupPage() {
   }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
   $$(".reveal").forEach((el) => io.observe(el));
 
-  const top = $("#top"), html = document.documentElement, touch = matchMedia("(hover: none), (max-width: 900px)").matches;
-  let scrollTimer = 0;
-  const onScroll = () => {
-    top.classList.toggle("stuck", scrollY > 12);
-    if (!touch) return;
-    /* пока страницу листают, бесконечные анимации на паузе (см. html.scrolling в style.css) */
-    if (!html.classList.contains("scrolling")) html.classList.add("scrolling");
-    clearTimeout(scrollTimer); scrollTimer = setTimeout(() => html.classList.remove("scrolling"), 180);
-  };
+  const top = $("#top");
+  const onScroll = () => top.classList.toggle("stuck", scrollY > 12);
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
   const links = $$(".nav a");
