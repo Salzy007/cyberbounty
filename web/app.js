@@ -1072,24 +1072,27 @@ init();
     svg.animate({ transform: ["scaleY(.08)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)"], opacity: [0, 1, .45, 1, .3, .6, 0], offset: [0, .1, .2, .3, .42, .52, 1] }, { duration: 760, fill: "both", easing: "linear" });
     flash.animate({ opacity: [0, 0, .95, .12, .5, .08, 0], offset: [0, .12, .16, .3, .36, .5, 1] }, { duration: 700, fill: "both", easing: "linear" });
     const extra = [svg, flash];
-    const ringD = 140, ring = fxEl(`left:${tx - ringD / 2}px;top:${ty - ringD / 2}px;width:${ringD}px;height:${ringD}px;border-radius:50%;border:3px solid ${c1};box-shadow:0 0 30px ${c2};`);
-    ring.animate({ transform: ["scale(.1)", `scale(${Math.hypot(W, H) / ringD})`], opacity: [.95, 0] }, { duration: 650, delay: 105, easing: "cubic-bezier(.2,.7,.3,1)", fill: "both" }); extra.push(ring);
-    for (let k = 0; k < (PHONE ? 3 : 7); k++) {                       // «рваные» полосы глитча
-      const bar = fxEl(`left:0;width:100%;top:${rnd(0, H - 40).toFixed(0)}px;height:${rnd(6, 34).toFixed(0)}px;background:linear-gradient(90deg,transparent,${k % 2 ? c1 : c2} 18%,${k % 2 ? c2 : c1} 82%,transparent);${PHONE ? "" : "mix-blend-mode:screen;"}`);
-      const dx = rnd(30, 90) * (k % 2 ? 1 : -1);
-      bar.animate({ opacity: [0, .85, 0, .6, 0], transform: [`translateX(${dx}px)`, `translateX(${-dx / 2}px)`, `translateX(${dx / 3}px)`, "translateX(0)", "translateX(0)"] }, { duration: 420, delay: 110 + k * 25, easing: "steps(5, end)", fill: "both" });
-      extra.push(bar);
-    }
+    const makeGlitch = () => {                          // создаётся уже после смены темы: иначе полосы замерзают в снимке старого вида и «зависают» на телефоне
+      const ringD = 140, ring = fxEl(`left:${tx - ringD / 2}px;top:${ty - ringD / 2}px;width:${ringD}px;height:${ringD}px;border-radius:50%;border:3px solid ${c1};box-shadow:0 0 30px ${c2};`);
+      ring.animate({ transform: ["scale(.1)", `scale(${Math.hypot(W, H) / ringD})`], opacity: [.95, 0] }, { duration: 650, delay: 0, easing: "cubic-bezier(.2,.7,.3,1)", fill: "both" }); extra.push(ring);
+      for (let k = 0; k < (PHONE ? 3 : 7); k++) {                       // «рваные» полосы глитча
+        const bar = fxEl(`left:0;width:100%;top:${rnd(0, H - 40).toFixed(0)}px;height:${rnd(6, 34).toFixed(0)}px;background:linear-gradient(90deg,transparent,${k % 2 ? c1 : c2} 18%,${k % 2 ? c2 : c1} 82%,transparent);${PHONE ? "" : "mix-blend-mode:screen;"}`);
+        const dx = rnd(30, 90) * (k % 2 ? 1 : -1);
+        bar.animate({ opacity: [0, .85, 0, .6, 0], transform: [`translateX(${dx}px)`, `translateX(${-dx / 2}px)`, `translateX(${dx / 3}px)`, "translateX(0)", "translateX(0)"] }, { duration: 420, delay: k * 25, easing: "steps(5, end)", fill: "both" });
+        extra.push(bar);
+      }
+    };
     // тема меняется в момент удара, новый вид «сбоит» и встаёт на место
     setTimeout(() => {
       const vt = document.startViewTransition(swap);
       vt.ready.then(() => {
+        makeGlitch();
         if (PHONE) nwAnim({ opacity: [0, 1, 0, 1, 1] }, { duration: 320, easing: "steps(5, end)" });
         else nwAnim({ opacity: [0, 1, 0, 1, 0, 1, 1], transform: ["translateX(-14px) skewX(-4deg)", "translateX(9px)", "translateX(-6px) skewX(2deg)", "translateX(5px)", "translateX(-2px)", "translateX(0)", "translateX(0)"] }, { duration: 420, easing: "steps(7, end)" });
       });
       vt.finished.finally(() => { busy = false; });
     }, 110);
-    setTimeout(() => extra.forEach((n) => n.remove()), 1000);
+    setTimeout(() => extra.forEach((n) => n.remove()), 1500);
   };
   btn.addEventListener("click", flip);
 })();
