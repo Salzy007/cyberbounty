@@ -1,0 +1,101 @@
+diff --git a/app/booking.py b/app/booking.py
+index 6d1bb22..389ece6 100644
+--- a/app/booking.py
++++ b/app/booking.py
+@@ -273,16 +273,14 @@ def cancel_booking(conn, booking_id: int, now: float | None = None) -> dict:
+ 
+ 
+ def cancel_by_client(conn, booking_id: int, user_id: int, now: float | None = None) -> dict:
+-    """Клиент отменяет свою бронь, пока она не началась."""
++    """Клиент отменяет свою бронь в любое время, пока она не закончилась (в том числе когда игра уже идёт: место освобождается)."""
+     now = time.time() if now is None else now
+     b = get_booking(conn, booking_id)
+     if b["user_id"] != user_id:
+         raise BookingError("no_booking", "Такой брони нет.", 404)      # чужую бронь даже не показываем
+     if b["status"] == "canceled":
+         raise BookingError("already", "Бронь уже отменена.", 409)
+-    if b["start"] <= now:
+-        raise BookingError("started", "Бронь уже началась. Отмену решает клуб: напишите администратору.", 409)
+-    return cancel_booking(conn, booking_id, now)
++    return cancel_booking(conn, booking_id, now)            # закончившуюся бронь отменить нельзя: cancel_booking ответит «finished»
+ 
+ 
+ def delete_booking(conn, booking_id: int) -> None:
+@@ -294,20 +292,23 @@ def delete_booking(conn, booking_id: int) -> None:
+ 
+ 
+ def delete_by_client(conn, booking_id: int, user_id: int, now: float | None = None) -> dict:
+-    """Клиент стирает из своего списка отменённую или уже прошедшую бронь. Действующую (идёт/будет) — нельзя."""
++    """Клиент убирает из СВОЕГО списка отменённую или уже прошедшую бронь. Строка в базе остаётся:
++    админка, статистика и бот владельца видят её как раньше. Действующую (идёт/будет) убрать нельзя."""
+     now = time.time() if now is None else now
+     b = get_booking(conn, booking_id)
+-    if b["user_id"] != user_id:
++    hidden = conn.execute("SELECT client_hidden FROM bookings WHERE id = ?", (booking_id,)).fetchone()[0]
++    if b["user_id"] != user_id or hidden:
+         raise BookingError("no_booking", "Такой брони нет.", 404)
+     if b["status"] != "canceled" and b["end"] > now:
+-        raise BookingError("active", "Стереть можно только отменённую или прошедшую бронь.", 409)
+-    conn.execute("DELETE FROM bookings WHERE id = ? AND (status = 'canceled' OR end_ts <= ?)", (booking_id, int(now)))
++        raise BookingError("active", "Убрать можно только отменённую или прошедшую бронь.", 409)
++    conn.execute("UPDATE bookings SET client_hidden = 1 WHERE id = ?", (booking_id,))
+     return b
+ 
+ 
+ def clear_mine(conn, user_id: int) -> int:
+-    """Клиент стирает все свои отменённые брони."""
+-    return conn.execute("DELETE FROM bookings WHERE status = 'canceled' AND user_id = ?", (user_id,)).rowcount
++    """Клиент убирает из своего списка все отменённые брони (в базе и в админке они остаются)."""
++    return conn.execute("UPDATE bookings SET client_hidden = 1 WHERE status = 'canceled' AND user_id = ? AND client_hidden = 0",
++                        (user_id,)).rowcount
+ 
+ 
+ def canceled_owners(conn) -> list[int]:
+@@ -326,7 +327,7 @@ def clear_history(conn) -> int:
+ 
+ 
+ def my_bookings(conn, user_id: int) -> list[dict]:
+-    rows = conn.execute(_SELECT + " WHERE b.user_id = ? ORDER BY b.start_ts DESC LIMIT 50", (user_id,))
++    rows = conn.execute(_SELECT + " WHERE b.user_id = ? AND b.client_hidden = 0 ORDER BY b.start_ts DESC LIMIT 50", (user_id,))
+     return [booking_view(r) for r in rows]
+ 
+ 
+@@ -347,10 +348,12 @@ def day_overview(conn, day_text: str, now: float) -> dict:
+         raise BookingError("bad_date", "Неверная дата.") from None
+     day_start = midnight(d)
+     day_end = day_start + 86400
+-    rows = conn.execute(
+-        _SELECT + " WHERE b.start_ts >= ? AND b.start_ts < ? ORDER BY b.start_ts, z.sort, p.number", (day_start, day_end)).fetchall()
++    rows = conn.execute(          # и брони, начавшиеся накануне и идущие за полночь: они занимают время этой даты
++        _SELECT + " WHERE b.end_ts > ? AND b.start_ts < ? ORDER BY b.start_ts, z.sort, p.number", (day_start, day_end)).fetchall()
+     bookings = [booking_view(r) for r in rows]
+-    confirmed = [b for b in bookings if b["status"] == "confirmed"]
++    for b in bookings:
++        b["carried"] = b["start"] < day_start                    # «с прошлой даты»: в итог дня не входит, чтобы не считать дважды
++    confirmed = [b for b in bookings if b["status"] == "confirmed" and not b["carried"]]
+     near = [booking_view(r) for r in conn.execute(           # занятость учитывает и брони, начавшиеся сразу после полуночи
+         _SELECT + " WHERE b.status = 'confirmed' AND b.end_ts > ? AND b.start_ts < ?", (day_start, day_end + 86400))]
+     zones = []
+diff --git a/app/db.py b/app/db.py
+index 976afc2..86ba39c 100644
+--- a/app/db.py
++++ b/app/db.py
+@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS bookings (
+     status       TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'canceled')),
+     idem_key     TEXT,                                 -- защита от двойного нажатия
+     created_ts   INTEGER NOT NULL,
+-    canceled_ts  INTEGER
++    canceled_ts  INTEGER,
++    client_hidden INTEGER NOT NULL DEFAULT 0           -- клиент убрал бронь из СВОЕГО списка; в админке и у владельца она остаётся
+ );
+ CREATE UNIQUE INDEX IF NOT EXISTS ux_bookings_key ON bookings (user_id, idem_key) WHERE idem_key IS NOT NULL;
+ CREATE INDEX IF NOT EXISTS ix_bookings_place ON bookings (place_id, status, start_ts);
+@@ -127,6 +128,8 @@ def init_db(db_path: Path) -> None:
+         if conn.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'users'").fetchone():
+             _migrate_users(conn)
+         conn.executescript(SCHEMA)
++        if not any(r["name"] == "client_hidden" for r in conn.execute("PRAGMA table_info(bookings)")):
++            conn.execute("ALTER TABLE bookings ADD COLUMN client_hidden INTEGER NOT NULL DEFAULT 0")      # старая база
+         if conn.execute("SELECT COUNT(*) FROM zones").fetchone()[0] == 0:
+             for sort, (zid, name, tagline, price, word, count) in enumerate(SEED_ZONES):
+                 conn.execute(
