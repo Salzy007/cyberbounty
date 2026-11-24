@@ -197,7 +197,7 @@ def test_admin_day_overview(conn):
 def test_client_cancel_rules(conn):
     b, _ = make(conn)
     assert code(lambda: booking.cancel_by_client(conn, b["id"], 999, NOW)) == "no_booking"     # чужую не отменить
-    assert code(lambda: booking.cancel_by_client(conn, b["id"], 1, b["start"] + 60)) == "started"  # уже началась
+    assert code(lambda: booking.cancel_by_client(conn, b["id"], 1, b["end"] + 60)) == "finished"   # закончившуюся не отменить
     assert booking.cancel_by_client(conn, b["id"], 1, NOW)["status"] == "canceled"
     assert code(lambda: booking.cancel_by_client(conn, b["id"], 1, NOW)) == "already"
     make(conn, U2)                                                                              # место снова свободно
@@ -232,3 +232,22 @@ def test_busy_at_chosen_time(conn):
     assert booking.busy_at(conn, "standard", at(20), 0) == {}
 
 
+
+
+def test_client_can_cancel_started_booking_and_frees_place(conn):
+    """Клиент отменяет бронь в любое время, в том числе когда игра уже идёт; место освобождается сразу."""
+    b, _ = make(conn)
+    mid = b["start"] + 60                                           # бронь уже началась
+    assert booking.busy_at(conn, "standard", mid, 0)                # место занято
+    assert booking.cancel_by_client(conn, b["id"], 1, mid)["status"] == "canceled"
+    assert not booking.busy_at(conn, "standard", mid, 0)            # и свободно сразу после отмены
+    assert code(lambda: booking.cancel_by_client(conn, b["id"], 1, mid)) == "already"
+
+
+def test_admin_day_lists_booking_carried_over_midnight(conn):
+    """Бронь 23:00–01:00 занимает время следующей даты, поэтому видна в списке обеих дат; в итог дня входит один раз."""
+    b, _ = make(conn, start=ts(2026, 11, 22, 23), hours=2)
+    first = booking.day_overview(conn, "2026-11-22", NOW)
+    second = booking.day_overview(conn, "2026-11-23", NOW)
+    assert [(x["id"], x["carried"]) for x in first["bookings"]] == [(b["id"], False)] and first["total"] == b["price"]
+    assert [(x["id"], x["carried"]) for x in second["bookings"]] == [(b["id"], True)] and second["total"] == 0

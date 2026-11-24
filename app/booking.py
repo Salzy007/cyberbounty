@@ -273,16 +273,14 @@ def cancel_booking(conn, booking_id: int, now: float | None = None) -> dict:
 
 
 def cancel_by_client(conn, booking_id: int, user_id: int, now: float | None = None) -> dict:
-    """Клиент отменяет свою бронь, пока она не началась."""
+    """Клиент отменяет свою бронь в любое время, пока она не закончилась (в том числе когда игра уже идёт: место освобождается)."""
     now = time.time() if now is None else now
     b = get_booking(conn, booking_id)
     if b["user_id"] != user_id:
         raise BookingError("no_booking", "Такой брони нет.", 404)      # чужую бронь даже не показываем
     if b["status"] == "canceled":
         raise BookingError("already", "Бронь уже отменена.", 409)
-    if b["start"] <= now:
-        raise BookingError("started", "Бронь уже началась. Отмену решает клуб: напишите администратору.", 409)
-    return cancel_booking(conn, booking_id, now)
+    return cancel_booking(conn, booking_id, now)            # закончившуюся бронь отменить нельзя: cancel_booking ответит «finished»
 
 
 def delete_booking(conn, booking_id: int) -> None:
@@ -350,10 +348,12 @@ def day_overview(conn, day_text: str, now: float) -> dict:
         raise BookingError("bad_date", "Неверная дата.") from None
     day_start = midnight(d)
     day_end = day_start + 86400
-    rows = conn.execute(
-        _SELECT + " WHERE b.start_ts >= ? AND b.start_ts < ? ORDER BY b.start_ts, z.sort, p.number", (day_start, day_end)).fetchall()
+    rows = conn.execute(          # и брони, начавшиеся накануне и идущие за полночь: они занимают время этой даты
+        _SELECT + " WHERE b.end_ts > ? AND b.start_ts < ? ORDER BY b.start_ts, z.sort, p.number", (day_start, day_end)).fetchall()
     bookings = [booking_view(r) for r in rows]
-    confirmed = [b for b in bookings if b["status"] == "confirmed"]
+    for b in bookings:
+        b["carried"] = b["start"] < day_start                    # «с прошлой даты»: в итог дня не входит, чтобы не считать дважды
+    confirmed = [b for b in bookings if b["status"] == "confirmed" and not b["carried"]]
     near = [booking_view(r) for r in conn.execute(           # занятость учитывает и брони, начавшиеся сразу после полуночи
         _SELECT + " WHERE b.status = 'confirmed' AND b.end_ts > ? AND b.start_ts < ?", (day_start, day_end + 86400))]
     zones = []
