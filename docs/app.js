@@ -429,7 +429,7 @@ function bookingCard(b, up) {
     <div class="bk__row"><b>${esc(b.zone)} · ${esc(seatLabel(b))}</b>${st}</div>
     <div class="bk__row"><span class="bk__when">${esc(dateLong(b.start))}, ${esc(b.start_time)}–${esc(b.end_time)}</span><span class="bk__code">${esc(b.code)}</span></div>
     <div class="bk__row"><span class="muted-s">${b.hours} ч</span><b class="price">${b.price} BYN</b></div>
-    ${canCancel ? '<div class="bk__act"><button class="mini" data-act="ask" type="button">Отменить</button></div>' : ""}
+    ${canCancel ? '<div class="bk__act"><button class="mini mini--cancel" data-act="ask" type="button">Отменить</button></div>' : up ? '<p class="bk__note">Бронь уже началась: отмену решает клуб, напишите администратору.</p>' : ""}
   </article>`;
 }
 function renderMy() {
@@ -440,7 +440,7 @@ function renderMy() {
   $("#myList").innerHTML = S.my.length
     ? (up.length ? `<p class="sub-h">Ближайшие</p>${up.map((b) => bookingCard(b, true)).join("")}` : "")
       + (past.length ? `<p class="sub-h">История</p>${past.map((b) => bookingCard(b, false)).join("")}` : "")
-      + (off.length ? `<div class="bk__act"><button class="mini" data-act="toggleoff" type="button">Отменённые (${off.length}): ${hidden ? "показать" : "скрыть"}</button></div>${hidden ? "" : off.map((b) => bookingCard(b, false)).join("")}` : "")
+      + (off.length ? `<div class="bk__act"><button class="mini mini--toggle" data-act="toggleoff" type="button">Отменённые (${off.length}): ${hidden ? "показать" : "скрыть"}</button></div>${hidden ? "" : off.map((b) => bookingCard(b, false)).join("")}` : "")
     : `<div class="empty"><svg class="ic"><use href="#i-ticket"/></svg><p>Пока нет броней.<br>Выберите место — это быстро.</p><button class="btn btn--hot" type="button" data-close data-go="book">Выбрать место</button></div>`;
 }
 function openMy() { closeMenu(); renderMy(); openModal($("#dMy")); loadMy(); }
@@ -459,7 +459,7 @@ $("#myList").addEventListener("click", async (e) => {
   if (btn.dataset.act === "ask") {
     act.innerHTML = '<button class="mini mini--no" data-act="no" type="button">Оставить</button><button class="mini mini--yes" data-act="yes" type="button">Да, отменить</button>';
   } else if (btn.dataset.act === "no") {
-    act.innerHTML = '<button class="mini" data-act="ask" type="button">Отменить</button>';
+    act.innerHTML = '<button class="mini mini--cancel" data-act="ask" type="button">Отменить</button>';
   } else if (btn.dataset.act === "yes") {
     btn.disabled = true;
     try {
@@ -616,7 +616,9 @@ function setupPage() {
   const so = new IntersectionObserver((es) => es.forEach((en) => {
     if (en.isIntersecting) links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + en.target.id));
   }), { rootMargin: "-45% 0px -50% 0px" });
-  ["book", "about", "services", "reviews"].forEach((id) => so.observe($("#" + id)));
+  ["hero", "book", "about", "services", "reviews", "faq"].forEach((id) => so.observe($("#" + id)));
+  /* «Главное» всегда ведёт в самый верх страницы, а не к якорю под шапкой */
+  $$("[data-home]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); scrollTo({ top: 0, left: 0, behavior: "instant" }); }));
 
   new IntersectionObserver((es) => { bookVisible = es[0].isIntersecting; dock(); }, { rootMargin: "0px 0px -10% 0px" }).observe($("#book"));
 
