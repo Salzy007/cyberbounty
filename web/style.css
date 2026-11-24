@@ -119,8 +119,8 @@ h1, h2, h3, h4, p { margin: 0; }
 @keyframes tick { to { transform: translateX(-50%); } }
 
 /* ---------- секции ---------- */
-.sec { padding: 96px 0; position: relative; }
-.sec--book { padding-top: 72px; }
+.sec { --sec-y: 80px; padding: var(--sec-y) 0; position: relative; }
+.sec--book { padding-top: 56px; }
 .sec__head { margin-bottom: 40px; }
 .kicker { font: 700 13px var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
 .kicker::before { content: ""; width: 34px; height: 2px; background: linear-gradient(90deg, var(--cyan), transparent); box-shadow: 0 0 10px var(--cyan); }
@@ -301,7 +301,7 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
 .rev__who small { color: var(--muted); font-size: 13px; }
 
 /* ---------- призыв и подвал ---------- */
-.sec--cta { padding: 40px 0 110px; }
+.sec--cta { padding: 32px 0 80px; }
 .cta { text-align: center; display: grid; gap: 18px; justify-items: center; padding: 64px 24px; border-radius: 28px; border: 1px solid rgba(53, 230, 255, .35); background: radial-gradient(60% 120% at 50% 0%, rgba(139, 92, 255, .3), transparent), rgba(13, 15, 32, .7); box-shadow: 0 0 80px -30px rgba(53, 230, 255, .5); position: relative; overflow: hidden; }
 .cta::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; padding: 2px; background: conic-gradient(from var(--a, 0deg), transparent 0 55%, var(--cyan), var(--pink), transparent 85%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: .7; pointer-events: none; }
 .cta p { color: #c5cbe8; max-width: 44ch; font-size: 18px; }
@@ -414,8 +414,8 @@ h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.08; font-weight: 800; l
   :root { --head: 60px; }
   html { scrollbar-gutter: auto; }
   .wrap { padding: 0 16px; }
-  .sec { padding: 64px 0; }
-  .sec--book { padding-top: 40px; }
+  .sec { --sec-y: 56px; }
+  .sec--book { padding-top: 32px; }
   .sec__head { margin-bottom: 26px; }
   .burger { display: grid; }
   .top__tools > .btn, .top__tools > .chip-btn span { display: none; }
@@ -499,7 +499,7 @@ html:not(.ready) .top { opacity: 0; transform: translateY(-14px); }
 @media (prefers-reduced-motion: reduce) { html.intro-on .intro { display: none; } }
 
 /* ---------- «Как это работает»: ролик по шагам в телефоне ---------- */
-.sec--how { padding-top: 40px; }
+.sec--how { padding-top: 32px; }
 .how { --k: .6; --how-ms: 3.5s; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 90px); align-items: center; }
 .how__cap { display: grid; gap: 14px; align-content: center; }
 .how__steps { display: grid; }
@@ -580,7 +580,7 @@ html:not(.ready) .top { opacity: 0; transform: translateY(-14px); }
 .how.paused .mk *, .how.paused .how-bar::after, .how.paused .how__aura { animation-play-state: paused !important; }
 @media (max-width: 900px) {
   .how { grid-template-columns: minmax(0, 1fr); gap: 36px; }
-  .sec--how { padding-top: 24px; }
+  .sec--how { padding-top: 16px; }
 }
 .mkleg { list-style: none; margin: 1cqw 0 0; padding: 0; display: flex; gap: 3.4cqw; flex-wrap: wrap; color: var(--muted); font-size: 3.3cqw; }
 .mkleg li { display: flex; align-items: center; gap: 1.4cqw; }
