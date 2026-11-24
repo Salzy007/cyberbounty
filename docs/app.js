@@ -1041,27 +1041,50 @@ init();
       return;
     }
     // --- молния ---
-    const tx = Math.min(W * .85, Math.max(W * .15, W / 2 + (Math.random() - .5) * W * .3)), ty = H * (.5 + Math.random() * .15);
-    const main = bolt(x, 0, tx, ty, 9, Math.min(W, 520) * .22);
-    const br1 = bolt(main[4][0], main[4][1], main[4][0] + (Math.random() < .5 ? -1 : 1) * W * .2, main[4][1] + H * .22, 5, 60);
-    const br2 = bolt(main[6][0], main[6][1], main[6][0] + (Math.random() < .5 ? -1 : 1) * W * .16, main[6][1] + H * .18, 4, 50);
-    const d = (a) => "M" + a.map((p) => p[0].toFixed(0) + " " + p[1].toFixed(0)).join(" L");
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const jag = (x0, y0, x1, y1, disp, depth) => {       // «ломаная» дробится пополам со смещением: получается живая молния
+      if (!depth) return [[x0, y0], [x1, y1]];
+      const mx = (x0 + x1) / 2 + rnd(-disp, disp), my = (y0 + y1) / 2 + rnd(-disp, disp) * .3;
+      return jag(x0, y0, mx, my, disp / 2, depth - 1).slice(0, -1).concat(jag(mx, my, x1, y1, disp / 2, depth - 1));
+    };
+    const path = (a) => "M" + a.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" L");
+    const tx = Math.min(W * .8, Math.max(W * .2, W / 2 + rnd(-.18, .18) * W)), ty = H * rnd(.46, .6);
+    const unit = Math.min(W, 560);
+    const main = jag(Math.min(W - 20, Math.max(20, x)), -10, tx, ty, unit * .2, 5);
+    const forks = [];
+    [.22, .38, .55, .72].forEach((f, k) => {
+      const p = main[Math.round((main.length - 1) * f)], dir = k % 2 ? 1 : -1;
+      forks.push(jag(p[0], p[1], p[0] + dir * rnd(.1, .24) * unit * 1.4, p[1] + rnd(.1, .22) * H, unit * .07, 4));
+    });
+    const bolts = [[main, 3.2], ...forks.map((f) => [f, 1.5])];
+    const layer = (cls, col, wMul, extra) => bolts.map(([a, w]) => `<path d="${path(a)}" fill="none" stroke="${col}" stroke-width="${(w * wMul).toFixed(1)}" stroke-linejoin="round" stroke-linecap="round" ${extra || ""}/>`).join("");
     const svg = document.createElementNS(NS, "svg");
-    svg.setAttribute("class", "fx-el"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.cssText = `left:0;top:0;width:${W}px;height:${H}px;transform-origin:50% 0;view-transition-name:fxbolt;filter:drop-shadow(0 0 10px ${c1}) drop-shadow(0 0 26px ${c2});`;
-    svg.innerHTML = [[main, 3.4, 1], [br1, 2, .85], [br2, 1.6, .75]].map(([a, w, o]) => `<path d="${d(a)}" fill="none" stroke="#fff" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" opacity="${o}"/>`).join("");
+    svg.setAttribute("class", "fx-el"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.style.cssText = `left:0;top:0;width:${W}px;height:${H}px;transform-origin:50% 0;view-transition-name:fxbolt;`;
+    svg.innerHTML = `<defs><filter id="fxblur" x="-20%" y="-5%" width="140%" height="110%"><feGaussianBlur stdDeviation="7"/></filter></defs>`
+      + `<g filter="url(#fxblur)" opacity=".9">${layer("g", c2, 5)}</g><g>${layer("m", c1, 2.2)}</g><g>${layer("c", "#fff", 1)}</g>`;
     document.body.append(svg);
-    const flash = fxEl(`view-transition-name:fxflash;left:0;top:0;width:100%;height:100%;background:radial-gradient(circle at ${tx}px ${ty}px, #fff 0, ${c1} 18%, ${c2} 45%, rgba(6,7,13,0) 80%);`);
-    svg.animate({ transform: ["scaleY(.05)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)"], opacity: [0, 1, .25, 1, .35, 0], offset: [0, .16, .3, .45, .7, 1] }, { duration: 520, fill: "both", easing: "linear" });
-    flash.animate({ opacity: [0, 0, .95, .2, .6, 0], offset: [0, .15, .2, .4, .55, 1] }, { duration: 600, fill: "both", easing: "linear" });
-    // тема меняется в момент удара, новый вид сбоит и встаёт на место
+    const flash = fxEl(`view-transition-name:fxflash;left:0;top:0;width:100%;height:100%;background:radial-gradient(circle at ${tx}px ${ty}px, #fff 0, ${c1} 14%, ${c2} 40%, rgba(6,7,13,0) 78%);`);
+    svg.animate({ transform: ["scaleY(.08)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)", "scaleY(1)"], opacity: [0, 1, .45, 1, .3, .6, 0], offset: [0, .1, .2, .3, .42, .52, 1] }, { duration: 760, fill: "both", easing: "linear" });
+    flash.animate({ opacity: [0, 0, .95, .12, .5, .08, 0], offset: [0, .12, .16, .3, .36, .5, 1] }, { duration: 700, fill: "both", easing: "linear" });
+    const extra = [svg, flash];
+    const ringD = 140, ring = fxEl(`left:${tx - ringD / 2}px;top:${ty - ringD / 2}px;width:${ringD}px;height:${ringD}px;border-radius:50%;border:3px solid ${c1};box-shadow:0 0 30px ${c2};`);
+    ring.animate({ transform: ["scale(.1)", `scale(${Math.hypot(W, H) / ringD})`], opacity: [.95, 0] }, { duration: 650, delay: 105, easing: "cubic-bezier(.2,.7,.3,1)", fill: "both" }); extra.push(ring);
+    for (let k = 0; k < 7; k++) {                       // «рваные» полосы глитча
+      const bar = fxEl(`left:0;width:100%;top:${rnd(0, H - 40).toFixed(0)}px;height:${rnd(6, 34).toFixed(0)}px;background:linear-gradient(90deg,transparent,${k % 2 ? c1 : c2} 18%,${k % 2 ? c2 : c1} 82%,transparent);mix-blend-mode:screen;`);
+      const dx = rnd(30, 90) * (k % 2 ? 1 : -1);
+      bar.animate({ opacity: [0, .85, 0, .6, 0], transform: [`translateX(${dx}px)`, `translateX(${-dx / 2}px)`, `translateX(${dx / 3}px)`, "translateX(0)", "translateX(0)"] }, { duration: 420, delay: 110 + k * 25, easing: "steps(5, end)", fill: "both" });
+      extra.push(bar);
+    }
+    // тема меняется в момент удара, новый вид «сбоит» и встаёт на место
     setTimeout(() => {
       const vt = document.startViewTransition(swap);
       vt.ready.then(() => {
-        nwAnim({ opacity: [0, 1, 0, 1, 0, 1, 1], transform: ["translateX(-10px) skewX(-3deg)", "translateX(7px)", "translateX(-5px) skewX(2deg)", "translateX(4px)", "translateX(-2px)", "translateX(0)", "translateX(0)"] }, { duration: 460, easing: "steps(7, end)" });
+        nwAnim({ opacity: [0, 1, 0, 1, 0, 1, 1], transform: ["translateX(-14px) skewX(-4deg)", "translateX(9px)", "translateX(-6px) skewX(2deg)", "translateX(5px)", "translateX(-2px)", "translateX(0)", "translateX(0)"] }, { duration: 420, easing: "steps(7, end)" });
       });
       vt.finished.finally(() => { busy = false; });
     }, 110);
-    setTimeout(() => { svg.remove(); flash.remove(); }, 800);
+    setTimeout(() => extra.forEach((n) => n.remove()), 1000);
   };
   btn.addEventListener("click", flip);
   $("#menuTheme").addEventListener("click", flip);
